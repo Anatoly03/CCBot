@@ -8,9 +8,9 @@ using EEUniverse.Library;
 using EEUniverse.LoginExtensions;
 using Newtonsoft.Json;
 
-namespace Turnskin
+namespace CCBot
 {
-    class Program
+    public class Program
     {
         // General
         public static Connection con;
@@ -448,7 +448,7 @@ namespace Turnskin
                                                 x++;
                                             } while (x <= y);
                                         }
-                                        catch (Exception e)
+                                        catch
                                         {
                                             await Task.Run(async () =>
                                             {
@@ -493,7 +493,7 @@ namespace Turnskin
                                                 await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Make sure the area of the rectangle you copy is more than zero!");
                                             }
                                         }
-                                        catch (Exception e)
+                                        catch
                                         {
                                             await Task.Run(async () =>
                                             {
@@ -535,7 +535,7 @@ namespace Turnskin
                                                 await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Make sure the area of the rectangle you copy is more than zero!");
                                             }
                                         }
-                                        catch (Exception e)
+                                        catch
                                         {
                                             await Task.Run(async () =>
                                             {
@@ -624,135 +624,5 @@ namespace Turnskin
             await con.SendAsync(MessageType.PlaceBlock, 1, x, y, id, morph, _p_id, _t_id, _flip);
             world[1, x, y] = new Portal(id, morph, _p_id, _t_id, _flip);
         }*/
-
-        /*
-         * Players
-         */
-
-        public class Player
-        {
-            // General
-            public int id;
-            public string name;
-            public bool isMod;
-
-            // !copy !cut !paste
-            public Block[,,] clipboard;
-
-            // !mode - Need to know who placed the block
-            //public int mode;
-
-            public Player(int _id, string _name)
-            {
-                id = _id;
-                name = _name;
-
-                // Always on start
-                //mode = 0;
-
-                // Is the player a moderator?
-                isMod = false;
-
-                if (mods.Contains(name))
-                {
-                    isMod = true;
-                }
-            }
-        }
-
-        /*
-         * Blocks
-         */
-
-        public class Block
-        {
-            public int id;
-
-            public Block(int i)
-            {
-                id = i;
-            }
-
-            public virtual async Task Place(int l, int x, int y)
-            {
-                //Console.WriteLine("base");
-                if (world[l, x, y].id != id)
-                {
-                    await con.SendAsync(MessageType.PlaceBlock, l, x, y, id);
-                }
-            }
-        }
-
-        public class Effect : Block
-        {
-            public int value;
-
-            public Effect(int i, int v) : base(i)
-            {
-                value = v;
-            }
-
-            public override async Task Place(int l, int x, int y)
-            {
-                await con.SendAsync(MessageType.PlaceBlock, l, x, y, id, value);
-            }
-        }
-
-        public class Portal : Block
-        {
-            public int rotation;
-            public int portalId;
-            public int targetId;
-            public bool flip;
-
-            public Portal(int i, int r, int pid, int tid, bool f) : base(i)
-            {
-                rotation = r;
-                portalId = pid;
-                targetId = tid;
-                flip = f;
-            }
-
-            public override async Task Place(int l, int x, int y)
-            {
-                await con.SendAsync(MessageType.PlaceBlock, l, x, y, id, rotation, portalId, targetId, flip);
-            }
-        }
-
-        public class Sign : Block
-        {
-            public string text;
-            public int morph;
-
-            public Sign(int i, string t, int m) : base(i)
-            {
-                text = t;
-                morph = m;
-            }
-
-            public override async Task Place(int l, int x, int y)
-            {
-                //Console.WriteLine("sign");
-                await con.SendAsync(MessageType.PlaceBlock, l, x, y, id, text, morph);
-            }
-        }
-
-        /*
-         * Maps
-         */
-
-        public class Coordinate
-        {
-            public int l;
-            public int x;
-            public int y;
-
-            public Coordinate(int _l, int _x, int _y)
-            {
-                l = _l;
-                x = _x;
-                y = _y;
-            }
-        }
     }
 }
