@@ -2,11 +2,12 @@
 
 ## Table of Contents
 
-- Todo
-- Commands
+- [Todo](#todo)
+- [Commands](#commands)
   - [Pasteboard](#pasteboard)
   - [Clear](#clear)
-  - [Basic Tools](#tools)
+  - [Basic Tools](#basic-tools)
+- [Read More](#useful-links)
   
 ## Todo
 
@@ -19,7 +20,7 @@
 
 ## Commands
 
-### <a id="pasteboard">Pasteboard</a>
+### Pasteboard
 
 Every user has his own `clipboard`, which stores 
 
@@ -29,7 +30,7 @@ Every user has his own `clipboard`, which stores
 | !cut   | x1 y1 x2 y2 | Cuts a rectangular area to the users' pasteboard.             |
 | !paste | x y         | Pastes the content of the pasteboard to the given coordinate. |
 
-### <a id="clear">Clear</a>
+### Clear
 
 Components that clear entire regions.
 
@@ -38,7 +39,7 @@ Components that clear entire regions.
 | !clear    | x1 y1 x2 y2 | Clears a rectangular area. |
 | !clearall |             | Clears the entire level.   |
 
-### <a id="tools">Basic Tools</a>
+### Basic Tools
 
 |             |       Parameters      |                Description                |
 |:-----------:|:---------------------:|:-----------------------------------------:|
