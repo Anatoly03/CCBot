@@ -12,6 +12,7 @@
 
 - a !track command which will be drawing the background of the movement you had, so you can see your trail
 - scan and build hard-coded elements, trees, temples, crew logo, designs, etc.
+  - !mode paste -> just place grey basic block at the coordinates instead of having to say !paste x y
 - !undo?
 - 'mirror mode': Once 'git'ting with leo and blocks placer can be identified: For the sake of even faster world building, set a symmetry axis (x or y), or a point; also: paste?
 - current limit: x2 must be > x1: Fix: Aslong x1 != x2 increase x1 till x2 is reached
@@ -50,9 +51,13 @@ Components that clear entire regions.
 
 Modes can be set with the `!mode <name>` command, where name represents the name of the mode.
 
-### Default
+### Default `!mode default`
 
-`!mode default`
+Doesn't change anything.
+
+### Rainbow `!mode rainbow`
+
+When placing the grey basic block (bid: 2), it changes to a color to have a full hue transition
 
 # Useful Links
 
