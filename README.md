@@ -2,10 +2,19 @@
 
 ## Table of Contents
 
+- Todo
 - Commands
   - [Pasteboard](#pasteboard)
   - [Clear](#clear)
   - [Basic Tools](#tools)
+  
+## Todo
+
+- a !track command which will be drawing the background of the movement you had, so you can see your trail
+- scan and build hard-coded elements, trees, temples, crew logo, designs, etc.
+- !undo?
+- 'mirror mode': Once 'git'ting with leo and blocks placer can be identified: For the sake of even faster world building, set a symmetry axis (x or y), or a point; also: paste?
+- current limit: x2 must be > x1: Fix: Aslong x1 != x2 increase x1 till x2 is reached
 
 ## Commands
 
@@ -37,6 +46,15 @@ Components that clear entire regions.
 | !fillcircle | layer x y radius bid  | Fills a circular area with blocks.        |
 | !circle     | layer x y radius bid  | Creates the border of a circular area.    |
 
-## Useful Links
+## Modes
 
-[Blocks.md](https://github.com/capasha/EEUProtocol/blob/master/Blocks.md) by [capasha](https://github.com/capasha)
+Modes can be set with the `!mode <name>` command, where name represents the name of the mode.
+
+### Default
+
+`!mode default`
+
+# Useful Links
+
+[List of all Blocks](https://github.com/capasha/EEUProtocol/blob/master/Blocks.md) by [capasha](https://github.com/capasha)
+[EEU Protocol](https://github.com/capasha/EEUProtocol/blob/master/README.md) by [capasha](https://github.com/capasha)
