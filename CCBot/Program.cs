@@ -27,7 +27,7 @@ namespace Turnskin
 
         public static int mode;
         public static int modeInt = 0;
-        public static int[] rainbow = new int[] { 21, 4, 21, 22, 5, 22, 23, 6, 23, 24, 7, 24, 25, 8, 25, 26, 9, 26, 27, 9, 26 };
+        public static int[] rainbow = { 21, 4, 21, 22, 5, 22, 23, 6, 23, 24, 7, 24, 25, 8, 25, 26, 9, 26, 27, 9, 26 };
 
         // Mix
         public static JsonSerializerSettings json_settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto };
@@ -56,18 +56,26 @@ namespace Turnskin
         static async Task Main2(string token)
         {
             Console.WriteLine("Logging in...");
-            var client = await GoogleLogin.GetClientFromCookieAsync(token);
-            await client.ConnectAsync();
 
-            con = client.CreateWorldConnection(worldid);
-
-            con.OnMessage += async (s, m) =>
+            try
             {
-                await Main3(m);
-            };
-            await con.SendAsync(MessageType.Init, 0);
+                var client = await GoogleLogin.GetClientFromCookieAsync(token);
+                await client.ConnectAsync();
 
-            Thread.Sleep(-1);
+                con = client.CreateWorldConnection(worldid);
+
+                con.OnMessage += async (s, m) =>
+                {
+                    await Main3(m);
+                };
+                await con.SendAsync(MessageType.Init, 0);
+
+                Thread.Sleep(-1);
+            }
+            catch
+            {
+                Console.WriteLine("Login failed! Update google cookie!");
+            }
         }
 
         static async Task Main3(Message m)
@@ -88,8 +96,8 @@ namespace Turnskin
                     height = m.GetInt(10);
 
                     int index = 11;
-                    for (int y = 0; y < 150; y++)
-                        for (int x = 0; x < 150; x++)
+                    for (int y = 0; y < width; y++)
+                        for (int x = 0; x < height; x++)
                         {
                             int value = 0;
                             if (m[index++] is int iValue)
@@ -127,28 +135,18 @@ namespace Turnskin
                             }
                         }
 
-                    /*for (int x = 0; x < 150; x++)
-                        for (int y = 0; y < 150; y++)
+                    /*for (int x = 0; x < width; x++)
+                        for (int y = 0; y < height; y++)
                         {
                             await con.SendAsync(MessageType.PlaceBlock, 1, x, y, 0);
                         }
 
-                    for (int x = 0; x < 150; x++)
-                        for (int y = 0; y < 150; y++)
+                    for (int x = 0; x < width; x++)
+                        for (int y = 0; y < height; y++)
                         {
                             //await world[1, x, y].Place(1, x, y);
                             await world[1, x, y].Place(1, x, y);
                         }*/
-
-                    /*Map map = maps[0];
-
-                    for (int l = 0; l < 2; l++)
-                        for (int x = 39; x < 39 + 72; x++)
-                            for (int y = 94; y < 94 + 40; y++)
-                            {
-                                //await world[1, x, y].Place(1, x, y);
-                                await map.game[l, x - 38, y - 93].Place(l, x, y);
-                            }*/
 
                     break;
 
@@ -162,6 +160,7 @@ namespace Turnskin
                     await con.SendAsync(MessageType.Chat, $"[CC] {player.name} joined!");
 
                     break;
+
 
                 case MessageType.PlayerExit:
                     player = players.FirstOrDefault(p => p.id == m.GetInt(0));
@@ -481,7 +480,10 @@ namespace Turnskin
                                                     for (int x = x1; x < x2 + 1; x++)
                                                         for (int y = y1; y < y2 + 1; y++)
                                                         {
-                                                            player.clipboard[l, x - x1, y - y1] = world[l, x, y];
+                                                            if (world[l, x, y].id != 0)
+                                                            {
+                                                                player.clipboard[l, x - x1, y - y1] = world[l, x, y];
+                                                            }
                                                         }
 
                                                 await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Content copied to clipboard");
@@ -493,7 +495,6 @@ namespace Turnskin
                                         }
                                         catch (Exception e)
                                         {
-                                            Console.WriteLine(e);
                                             await Task.Run(async () =>
                                             {
                                                 await con.SendAsync(MessageType.Chat, $"/pm {player.name} error");
@@ -518,7 +519,10 @@ namespace Turnskin
                                                 for (int x = 0; x < player.clipboard.GetLength(1); x++)
                                                     for (int y = 0; y < player.clipboard.GetLength(2); y++)
                                                     {
-                                                        await player.clipboard[l, x, y].Place(l, _x + x, _y + y);
+                                                        if (player.clipboard[l, x, y] != null)
+                                                        {
+                                                            await player.clipboard[l, x, y].Place(l, _x + x, _y + y);
+                                                        }
                                                     }
                                         }
                                         catch
