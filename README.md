@@ -3,9 +3,9 @@
 ## Table of Contents
 
 - Commands
- - [Pasteboard](#pasteboard)
- - [Clear](#clear)
- - [Basic Tools](#tools)
+  - [Pasteboard](#pasteboard)
+  - [Clear](#clear)
+  - [Basic Tools](#tools)
 
 ## Commands
 
