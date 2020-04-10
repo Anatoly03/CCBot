@@ -282,7 +282,7 @@ namespace Turnskin
                                         for (int x = 0; x < width; x++)
                                             for (int y = 0; y < height; y++)
                                             {
-                                                await con.SendAsync(MessageType.PlaceBlock, l, x, y, 0);
+                                                await PlaceBlock(l, x, y, 0);
                                             }
                                     break;
 
@@ -292,15 +292,15 @@ namespace Turnskin
                                         {
                                             if (x % 100 == 0 || y % 100 == 0)
                                             {
-                                                await con.SendAsync(MessageType.PlaceBlock, 1, x, y, 1);
+                                                await PlaceBlock(1, x, y, 1);
                                             }
                                             else if (x % 25 == 0 || y % 25 == 0)
                                             {
-                                                await con.SendAsync(MessageType.PlaceBlock, 1, x, y, 2);
+                                                await PlaceBlock(1, x, y, 2);
                                             }
                                             else if (x % 5 == 0 || y % 5 == 0)
                                             {
-                                                await con.SendAsync(MessageType.PlaceBlock, 1, x, y, 3);
+                                                await PlaceBlock(1, x, y, 3);
                                             }
                                         }
                                     break;
@@ -321,7 +321,7 @@ namespace Turnskin
                                             for (int x = x1; x < x2 + 1; x++)
                                                 for (int y = y1; y < y2 + 1; y++)
                                                 {
-                                                    await con.SendAsync(MessageType.PlaceBlock, l, x, y, bid);
+                                                    await PlaceBlock(l, x, y, bid);
                                                 }
                                         }
                                         catch
@@ -349,14 +349,14 @@ namespace Turnskin
 
                                             for (int x = x1; x < x2 + 1; x++)
                                             {
-                                                await con.SendAsync(MessageType.PlaceBlock, l, x, y1, bid);
-                                                await con.SendAsync(MessageType.PlaceBlock, l, x, y2, bid);
+                                                await PlaceBlock(l, x, y1, bid);
+                                                await PlaceBlock(l, x, y2, bid);
                                             }
 
                                             for (int y = y1; y < y2 + 1; y++)
                                             {
-                                                await con.SendAsync(MessageType.PlaceBlock, l, x1, y, bid);
-                                                await con.SendAsync(MessageType.PlaceBlock, l, x2, y, bid);
+                                                await PlaceBlock(l, x1, y, bid);
+                                                await PlaceBlock(l, x2, y, bid);
                                             }
                                         }
                                         catch
@@ -386,7 +386,7 @@ namespace Turnskin
                                                 {
                                                     if (Math.Pow(_x - x, 2) + Math.Pow(_y - y, 2) < Math.Pow(r, 2))
                                                     {
-                                                        await con.SendAsync(MessageType.PlaceBlock, l, x, y, bid);
+                                                        await PlaceBlock(l, x, y, bid);
                                                     }
                                                 }
                                         }
@@ -427,14 +427,14 @@ namespace Turnskin
 
                                             do
                                             {
-                                                await con.SendAsync(MessageType.PlaceBlock, l, _x + x, _y + y, bid);
-                                                await con.SendAsync(MessageType.PlaceBlock, l, _x - x, _y + y, bid);
-                                                await con.SendAsync(MessageType.PlaceBlock, l, _x + x, _y - y, bid);
-                                                await con.SendAsync(MessageType.PlaceBlock, l, _x - x, _y - y, bid);
-                                                await con.SendAsync(MessageType.PlaceBlock, l, _x + y, _y + x, bid);
-                                                await con.SendAsync(MessageType.PlaceBlock, l, _x - y, _y + x, bid);
-                                                await con.SendAsync(MessageType.PlaceBlock, l, _x + y, _y - x, bid);
-                                                await con.SendAsync(MessageType.PlaceBlock, l, _x - y, _y - x, bid);
+                                                await PlaceBlock(l, _x + x, _y + y, bid);
+                                                await PlaceBlock(l, _x - x, _y + y, bid);
+                                                await PlaceBlock(l, _x + x, _y - y, bid);
+                                                await PlaceBlock(l, _x - x, _y - y, bid);
+                                                await PlaceBlock(l, _x + y, _y + x, bid);
+                                                await PlaceBlock(l, _x - y, _y + x, bid);
+                                                await PlaceBlock(l, _x + y, _y - x, bid);
+                                                await PlaceBlock(l, _x - y, _y - x, bid);
 
                                                 if (d < 0)
                                                 {
@@ -504,7 +504,45 @@ namespace Turnskin
                                     break;
 
                                 case "cut":
+                                    if (param.Length > 4)
+                                    {
+                                        try
+                                        {
+                                            int x1 = Int32.Parse(param[1]);
+                                            int y1 = Int32.Parse(param[2]);
+                                            int x2 = Int32.Parse(param[3]);
+                                            int y2 = Int32.Parse(param[4]);
 
+                                            if (Math.Abs(x1 - x2) > 0 && Math.Abs(y1 - y2) > 0)
+                                            {
+                                                player.clipboard = new Block[2, x2 - x1 + 1, y2 - y1 + 1];
+
+                                                for (int l = 0; l < 2; l++)
+                                                    for (int x = x1; x < x2 + 1; x++)
+                                                        for (int y = y1; y < y2 + 1; y++)
+                                                        {
+                                                            if (world[l, x, y].id != 0)
+                                                            {
+                                                                player.clipboard[l, x - x1, y - y1] = world[l, x, y];
+                                                                await PlaceBlock(l, x, y, 0);
+                                                            }
+                                                        }
+
+                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Content cut to clipboard");
+                                            }
+                                            else
+                                            {
+                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Make sure the area of the rectangle you copy is more than zero!");
+                                            }
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            await Task.Run(async () =>
+                                            {
+                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} error");
+                                            });
+                                        }
+                                    }
                                     break;
 
                                 case "paste":
@@ -566,13 +604,16 @@ namespace Turnskin
          * Functions
          */
 
-        /*static async Task PlaceBlock(int l, int x, int y, int id)
+        static async Task PlaceBlock(int l, int x, int y, int id)
         {
-            await con.SendAsync(MessageType.PlaceBlock, l, x, y, id);
-            world[l, x, y] = new Block(id);
+            if (world[l, x, y].id != id)
+            {
+                await con.SendAsync(MessageType.PlaceBlock, l, x, y, id);
+                world[l, x, y] = new Block(id);
+            }
         }
 
-        static async Task PlaceSign(int x, int y, int id, string text, int morph)
+        /*static async Task PlaceSign(int x, int y, int id, string text, int morph)
         {
             await con.SendAsync(MessageType.PlaceBlock, 1, x, y, id, text, morph);
             world[1, x, y] = new Sign(id, text, morph);
@@ -635,7 +676,10 @@ namespace Turnskin
             public virtual async Task Place(int l, int x, int y)
             {
                 //Console.WriteLine("base");
-                await con.SendAsync(MessageType.PlaceBlock, l, x, y, id);
+                if (world[l, x, y].id != id)
+                {
+                    await con.SendAsync(MessageType.PlaceBlock, l, x, y, id);
+                }
             }
         }
 
