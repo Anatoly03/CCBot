@@ -52,11 +52,13 @@ Components that clear entire regions.
 
 Modes can be set with the `!mode <name>` command, where name represents the name of the mode.
 
-### Default `!mode default`
+### Default
+`!mode default`
 
 Doesn't change anything.
 
-### Rainbow `!mode rainbow`
+### Rainbow
+`!mode rainbow`
 
 When placing the grey basic block (bid: 2), it changes to a color to have a full hue transition
 
