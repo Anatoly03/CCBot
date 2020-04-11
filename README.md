@@ -6,6 +6,7 @@
   - [Pasteboard](#pasteboard)
   - [Clear](#clear)
   - [Basic Tools](#basic-tools)
+- [Modes](#modes)
 - [Read More](#useful-links)
 
 ## Commands
