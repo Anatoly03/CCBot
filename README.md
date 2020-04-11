@@ -42,7 +42,7 @@ Components that clear entire regions.
 
 Modes can be set with the `!mode <name>` command, where name represents the name of the mode.
 
-### Default
+<!--### Default
 `!mode default`
 
 Doesn't change anything.
@@ -50,10 +50,10 @@ Doesn't change anything.
 ### Rainbow
 `!mode rainbow`
 
-When placing the grey basic block (bid: 2), it changes to a color to have a full hue transition
+When placing the grey basic block (bid: 2), it changes to a color to have a full hue transition-->
 
 # Useful Links
 
 - [List of all Blocks](https://github.com/capasha/EEUProtocol/blob/master/Blocks.md) by [capasha](https://github.com/capasha)
 - [EEU Protocol](https://github.com/capasha/EEUProtocol/blob/master/README.md) by [capasha](https://github.com/capasha)
-- [Project Board](#https://github.com/Anatoly03/CCBot/projects/2)
+- [Project Board](https://github.com/Anatoly03/CCBot/projects/2)
