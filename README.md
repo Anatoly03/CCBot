@@ -2,21 +2,11 @@
 
 ## Table of Contents
 
-- [Todo](#todo)
 - [Commands](#commands)
   - [Pasteboard](#pasteboard)
   - [Clear](#clear)
   - [Basic Tools](#basic-tools)
 - [Read More](#useful-links)
-  
-## Todo
-
-- a !track command which will be drawing the background of the movement you had, so you can see your trail
-- scan and build hard-coded elements, trees, temples, crew logo, designs, etc.
-  - !mode paste -> just place grey basic block at the coordinates instead of having to say !paste x y
-- !undo?
-- 'mirror mode': Once 'git'ting with leo and blocks placer can be identified: For the sake of even faster world building, set a symmetry axis (x or y), or a point; also: paste?
-- current limit: x2 must be > x1: Fix: Aslong x1 != x2 increase x1 till x2 is reached
 
 ## Commands
 
@@ -66,3 +56,4 @@ When placing the grey basic block (bid: 2), it changes to a color to have a full
 
 - [List of all Blocks](https://github.com/capasha/EEUProtocol/blob/master/Blocks.md) by [capasha](https://github.com/capasha)
 - [EEU Protocol](https://github.com/capasha/EEUProtocol/blob/master/README.md) by [capasha](https://github.com/capasha)
+- [Project Board](#https://github.com/Anatoly03/CCBot/projects/2)
