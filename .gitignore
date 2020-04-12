@@ -1,4 +1,7 @@
+
 **/cookie.txt
+
+.vscode/
 
 # globs
 Makefile.in
