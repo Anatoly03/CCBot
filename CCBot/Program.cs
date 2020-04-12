@@ -15,7 +15,8 @@ namespace CCBot
         // General
         public static Connection con;
         public static Block[,,] world;
-        public static string worldid = "ZSgvAgo2ONps";
+        public static string worldid = "LylVqeLVd8V5";//"ZSgvAgo2ONps";
+        public static int botid;
 
         // Players
         public static List<Player> players = new List<Player>(); // Players in the world
@@ -25,11 +26,9 @@ namespace CCBot
         public static int width;
         public static int height;
 
-        public static int mode;
-        public static int modeInt = 0;
+        // Mix
         public static int[] rainbow = { 21, 4, 21, 22, 5, 22, 23, 6, 23, 24, 7, 24, 25, 8, 25, 26, 9, 26, 27, 9, 26 };
 
-        // Mix
         public static JsonSerializerSettings json_settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto };
 
         static async Task Main(string[] args)
@@ -88,7 +87,7 @@ namespace CCBot
 
                     Console.WriteLine("Logged in!");
                     await con.SendAsync(MessageType.Chat, $"[CC] Connected!");
-                    //await con.SendAsync(MessageType.Chat, $"/title Turnskin [ON]");
+                    botid = m.GetInt(0);
 
                     world = new Block[2, m.GetInt(9), m.GetInt(10)];
 
@@ -159,6 +158,11 @@ namespace CCBot
 
                     await con.SendAsync(MessageType.Chat, $"[CC] {player.name} joined!");
 
+                    if (player.isMod)
+                    {
+                        await con.SendAsync(MessageType.Chat, $"/giveedit {player.name}"); // If the world belongs to the owner of the bot, give it a try :)
+                    }
+
                     break;
 
 
@@ -170,44 +174,115 @@ namespace CCBot
 
                     break;
 
-                case MessageType.PlaceBlock:
-                    world[m.GetInt(0), m.GetInt(1), m.GetInt(2)] = new Block(m.GetInt(3));
+                case MessageType.PlayerGod:
+                    player = players.FirstOrDefault(p => p.id == m.GetInt(0));  
+                    player.isInGod = m.GetBool(1);
 
-                    switch (m.GetInt(3))
+                    break;
+
+                case MessageType.PlaceBlock:
+                    Block blockBefore = world[m.GetInt(1), m.GetInt(2), m.GetInt(3)];
+
+                    // Assign block to the world
+                    world[m.GetInt(1), m.GetInt(2), m.GetInt(3)] = new Block(m.GetInt(4));
+
+                    switch (m.GetInt(4))
                     {
                         // Signs
                         case 55:
                         case 56:
                         case 57:
                         case 58:
-                            string text = m.GetString(4);
-                            int morph = m.GetInt(5);
-                            world[m.GetInt(0), m.GetInt(1), m.GetInt(2)] = new Sign(m.GetInt(3), text, morph);
+                            string text = m.GetString(5);
+                            int morph = m.GetInt(6);
+                            world[m.GetInt(1), m.GetInt(2), m.GetInt(3)] = new Sign(m.GetInt(4), text, morph);
                             break;
 
                         // Portals
                         case 59:
-                            int rotation = m.GetInt(4);
-                            int p_id = m.GetInt(5);
-                            int t_id = m.GetInt(6);
-                            bool flip = m.GetBool(7);
-                            world[m.GetInt(0), m.GetInt(1), m.GetInt(2)] = new Portal(m.GetInt(3), rotation, p_id, t_id, flip);
+                            int rotation = m.GetInt(5);
+                            int p_id = m.GetInt(6);
+                            int t_id = m.GetInt(7);
+                            bool flip = m.GetBool(8);
+                            world[m.GetInt(1), m.GetInt(2), m.GetInt(3)] = new Portal(m.GetInt(4), rotation, p_id, t_id, flip);
                             break;
 
                         // Effects
                         case 93:
                         case 94:
-                            int r = m.GetInt(4);
-                            world[m.GetInt(0), m.GetInt(1), m.GetInt(2)] = new Effect(m.GetInt(3), r);
+                            int r = m.GetInt(5);
+                            world[m.GetInt(1), m.GetInt(2), m.GetInt(3)] = new Effect(m.GetInt(4), r);
                             break;
                     }
 
-                    if (m.GetInt(3) == 2)
+                    // For special modes, replace the block
+                    if (m.GetInt(0) != botid)
                     {
-                        if (mode == 1)
+                        player = players.FirstOrDefault(p => p.id == m.GetInt(0));
+                        int bid = m.GetInt(4);
+
+                        if (player.brushSize > 1 && player.mode == 0)
                         {
-                            modeInt++;
-                            await con.SendAsync(MessageType.PlaceBlock, 1, m.GetInt(1), m.GetInt(2), rainbow[modeInt%rainbow.Length]);
+                            for (int x = 0; x < width; x++)
+                                for (int y = 0; y < height; y++)
+                                    if (Math.Pow(m.GetInt(2) - x, 2) + Math.Pow(m.GetInt(3) - y, 2) < Math.Pow(player.brushSize, 2))
+                                        await PlaceBlock(m.GetInt(1), x, y, bid);
+                        }
+
+                        switch (player.mode)
+                        {
+                            case 1:
+                                if (bid == 2)
+                                    await con.SendAsync(MessageType.PlaceBlock, 1, m.GetInt(2), m.GetInt(3), rainbow[new Random().Next(0, rainbow.Length - 1)]);
+                                break;
+
+                            case 2:
+                                switch (bid)
+                                {
+                                    // Set checkpoint for copying content
+                                    case 1:
+
+                                        player.copyTopLeftCorner = new Coordinate(m.GetInt(2), m.GetInt(3));
+                                        await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Checkpoint set!");
+                                        await blockBefore.Place(1, m.GetInt(2), m.GetInt(3));
+
+                                        break;
+
+                                    // Paste
+                                    case 2:
+
+                                        await blockBefore.Place(1, m.GetInt(2), m.GetInt(3));
+                                        for (int l = 0; l < 2; l++)
+                                            for (int x = 0; x < player.clipboard.GetLength(1); x++)
+                                                for (int y = 0; y < player.clipboard.GetLength(2); y++)
+                                                    if (x >= 0 && y >= 0 && x < width && y < height)
+                                                        if (player.clipboard[l, x, y] != null)
+                                                            await player.clipboard[l, x, y].Place(l, m.GetInt(2) + x, m.GetInt(3) + y);
+
+                                        break;
+
+                                    // Copy
+                                    case 3:
+
+                                        if (Math.Abs((player.copyTopLeftCorner.x - m.GetInt(2)) * (player.copyTopLeftCorner.y - m.GetInt(3))) > 0)
+                                        {
+                                            await blockBefore.Place(1, m.GetInt(2), m.GetInt(3));
+                                            player.clipboard = new Block[2, m.GetInt(2) - player.copyTopLeftCorner.x + 1, m.GetInt(3) - player.copyTopLeftCorner.y + 1];
+
+                                            for (int l = 0; l < 2; l++)
+                                                for (int x = player.copyTopLeftCorner.x; x < m.GetInt(2) + 1; x++)
+                                                    for (int y = player.copyTopLeftCorner.y; y < m.GetInt(3) + 1; y++)
+                                                        if (x >= 0 && y >= 0 && x < width && y < height)
+                                                            if (world[l, x, y].id != 0)
+                                                                player.clipboard[l, x - player.copyTopLeftCorner.x, y - player.copyTopLeftCorner.y] = world[l, x, y];
+                                            player.clipboard[1, m.GetInt(2) - player.copyTopLeftCorner.x, m.GetInt(3) - player.copyTopLeftCorner.y] = blockBefore;
+
+                                            await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Content copied to clipboard!");
+                                        }
+
+                                        break;
+                                }
+                                break;
                         }
                     }
                     break;
@@ -227,21 +302,40 @@ namespace CCBot
                                 case "help":
                                     await Task.Run(async () =>
                                     {
-                                        await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Artist Commands: (bid: see https://github.com/capasha/EEUProtocol/blob/master/Blocks.md)");
-                                        //await con.SendAsync(MessageType.Chat, $"/pm {player.name} !circle l x y r bid = Clears everything in the specified circular area. (!ci)");
-                                        await con.SendAsync(MessageType.Chat, $"/pm {player.name} !clear x1 y1 x2 y2 = Clears everything in the specified area. (!cl)");
-                                        await con.SendAsync(MessageType.Chat, $"/pm {player.name} !clearall = Clears everything.");
-                                        await con.SendAsync(MessageType.Chat, $"/pm {player.name} !drawsectors = First stage of level building: Show all boxes");
-                                        await con.SendAsync(MessageType.Chat, $"/pm {player.name} !fill l x1 y1 x2 y2 bid = Fills everything in the specified area with a block (!fl)");
-                                        await con.SendAsync(MessageType.Chat, $"/pm {player.name} !fillcircle l x y r bid = Clears everything in the specified circular area. (!fc)");
-                                        await con.SendAsync(MessageType.Chat, $"/pm {player.name} !rect l x1 y1 x2 y2 bid = Creates the border of the rect of the specified area (!re)");
-                                    });
-                                    break;
+                                        if (param.Length > 1)
+                                        {
+                                            switch (param[0])
+                                            {
+                                                case "tools":
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} !circle l x y d bid = Creates the border of the specified circular area. (!ci)");
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} !clear x1 y1 x2 y2 = Clears everything in the specified area. (!cl)");
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} !clearall = Clears everything.");
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} !fill l x1 y1 x2 y2 bid = Fills everything in the specified area with a block (!fl)");
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} !rect l x1 y1 x2 y2 bid = Creates the border of the rect of the specified area (!re)");
+                                                    break;
 
-                                case "amimod":
-                                    await Task.Run(async () =>
-                                    {
-                                        await con.SendAsync(MessageType.Chat, $"/pm {player.name} {player.isMod.ToString()}");
+                                                case "clipboard":
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} To activate the paste-mode, say '!mode paste'");
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} Copy: Initialize the top left corner with a white basic block, copy a rectangular area with the black basic block (Everything between those two will be copied)");
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} Paste: Place a grey basic block at the top left of where your paste should be");
+                                                    break;
+
+                                                case "modes":
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} Use !mode <modification name>");
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} rainbow: Try it out.");
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} paste: Not working yet.");
+                                                    break;
+
+                                                case "settings":
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} !brush size d: Sets your brush size");
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            await con.SendAsync(MessageType.Chat, $"/pm {player.name} [Creative Crew Bot] For the block id's, see https://github.com/capasha/EEUProtocol/blob/master/Blocks.md");
+                                            await con.SendAsync(MessageType.Chat, $"/pm {player.name} List of commands filtered by usage: !help <tools | clipboard | modes | settings>");
+                                        }
                                     });
                                     break;
 
@@ -284,25 +378,6 @@ namespace CCBot
                                             {
                                                 await PlaceBlock(l, x, y, 0);
                                             }
-                                    break;
-
-                                case "drawsectors":
-                                    for (int x = 0; x < width; x++)
-                                        for (int y = 0; y < height; y++)
-                                        {
-                                            if (x % 100 == 0 || y % 100 == 0)
-                                            {
-                                                await PlaceBlock(1, x, y, 1);
-                                            }
-                                            else if (x % 25 == 0 || y % 25 == 0)
-                                            {
-                                                await PlaceBlock(1, x, y, 2);
-                                            }
-                                            else if (x % 5 == 0 || y % 5 == 0)
-                                            {
-                                                await PlaceBlock(1, x, y, 3);
-                                            }
-                                        }
                                     break;
 
                                 case "fill":
@@ -369,37 +444,6 @@ namespace CCBot
                                     }
                                     break;
 
-                                case "fillcircle":
-                                case "fc":
-                                    if (param.Length > 5)
-                                    {
-                                        try
-                                        {
-                                            int l = Int32.Parse(param[1]);
-                                            int _x = Int32.Parse(param[2]);
-                                            int _y = Int32.Parse(param[3]);
-                                            int r = Int32.Parse(param[4]);
-                                            int bid = Int32.Parse(param[5]);
-
-                                            for (int x = 0; x < width; x++)
-                                                for (int y = 0; y < height; y++)
-                                                {
-                                                    if (Math.Pow(_x - x, 2) + Math.Pow(_y - y, 2) < Math.Pow(r, 2))
-                                                    {
-                                                        await PlaceBlock(l, x, y, bid);
-                                                    }
-                                                }
-                                        }
-                                        catch
-                                        {
-                                            await Task.Run(async () =>
-                                            {
-                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} error");
-                                            });
-                                        }
-                                    }
-                                    break;
-
                                 case "circle":
                                 case "ci":
                                     if (param.Length > 5)
@@ -411,15 +455,6 @@ namespace CCBot
                                             int _y = Int32.Parse(param[3]);
                                             int r = Int32.Parse(param[4]);
                                             int bid = Int32.Parse(param[5]);
-
-                                            /*for (int x = 0; x < width; x++)
-                                                for (int y = 0; y < height; y++)
-                                                {
-                                                    if (Math.Pow(_x - x, 2) + Math.Pow(_y - y, 2) < Math.Pow(r, 2) && Math.Pow(_x - x, 2) + Math.Pow(_y - y, 2) > Math.Pow(r - 1, 2))
-                                                    {
-                                                        await con.SendAsync(MessageType.PlaceBlock, l, x, y, bid);
-                                                    }
-                                                }*/
 
                                             int d = (5 - r * 4) / 4;
                                             int x = 0;
@@ -459,122 +494,7 @@ namespace CCBot
                                     break;
 
                                 /*
-                                 * Clipboard
-                                 */
-
-                                case "copy":
-                                    if (param.Length > 4)
-                                    {
-                                        try
-                                        {
-                                            int x1 = Int32.Parse(param[1]);
-                                            int y1 = Int32.Parse(param[2]);
-                                            int x2 = Int32.Parse(param[3]);
-                                            int y2 = Int32.Parse(param[4]);
-
-                                            if (Math.Abs(x1 - x2) > 0 && Math.Abs(y1 - y2) > 0)
-                                            {
-                                                player.clipboard = new Block[2, x2 - x1 + 1, y2 - y1 + 1];
-
-                                                for (int l = 0; l < 2; l++)
-                                                    for (int x = x1; x < x2 + 1; x++)
-                                                        for (int y = y1; y < y2 + 1; y++)
-                                                        {
-                                                            if (world[l, x, y].id != 0)
-                                                            {
-                                                                player.clipboard[l, x - x1, y - y1] = world[l, x, y];
-                                                            }
-                                                        }
-
-                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Content copied to clipboard");
-                                            }
-                                            else
-                                            {
-                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Make sure the area of the rectangle you copy is more than zero!");
-                                            }
-                                        }
-                                        catch
-                                        {
-                                            await Task.Run(async () =>
-                                            {
-                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} error");
-                                            });
-                                        }
-                                    }
-                                    break;
-
-                                case "cut":
-                                    if (param.Length > 4)
-                                    {
-                                        try
-                                        {
-                                            int x1 = Int32.Parse(param[1]);
-                                            int y1 = Int32.Parse(param[2]);
-                                            int x2 = Int32.Parse(param[3]);
-                                            int y2 = Int32.Parse(param[4]);
-
-                                            if (Math.Abs(x1 - x2) > 0 && Math.Abs(y1 - y2) > 0)
-                                            {
-                                                player.clipboard = new Block[2, x2 - x1 + 1, y2 - y1 + 1];
-
-                                                for (int l = 0; l < 2; l++)
-                                                    for (int x = x1; x < x2 + 1; x++)
-                                                        for (int y = y1; y < y2 + 1; y++)
-                                                        {
-                                                            if (world[l, x, y].id != 0)
-                                                            {
-                                                                player.clipboard[l, x - x1, y - y1] = world[l, x, y];
-                                                                await PlaceBlock(l, x, y, 0);
-                                                            }
-                                                        }
-
-                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Content cut to clipboard");
-                                            }
-                                            else
-                                            {
-                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Make sure the area of the rectangle you copy is more than zero!");
-                                            }
-                                        }
-                                        catch
-                                        {
-                                            await Task.Run(async () =>
-                                            {
-                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} error");
-                                            });
-                                        }
-                                    }
-                                    break;
-
-                                case "paste":
-                                    if (param.Length > 2)
-                                    {
-                                        try
-                                        {
-                                            int _x = Int32.Parse(param[1]);
-                                            int _y = Int32.Parse(param[2]);
-
-                                            for (int l = 0; l < 2; l++)
-                                                for (int x = 0; x < player.clipboard.GetLength(1); x++)
-                                                    for (int y = 0; y < player.clipboard.GetLength(2); y++)
-                                                    {
-                                                        if (player.clipboard[l, x, y] != null)
-                                                        {
-                                                            await player.clipboard[l, x, y].Place(l, _x + x, _y + y);
-                                                        }
-                                                    }
-                                        }
-                                        catch
-                                        {
-                                            await Task.Run(async () =>
-                                            {
-                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} error");
-                                            });
-                                        }
-                                    }
-                                    break;
-
-                                /*
-                                 * Mode setting
+                                 * Setting
                                  */
 
                                 case "mode":
@@ -583,12 +503,47 @@ namespace CCBot
                                         switch(param[1])
                                         {
                                             case "default":
-                                                /*player.*/mode = 0;
-                                                //await con.SendAsync(MessageType.Chat, $"/pm {player.name} [CC] Your mode has been set to default!");
+                                                player.mode = 0;
                                                 break;
 
                                             case "rainbow":
-                                                /*player.*/mode = 1;
+                                                player.mode = 1;
+                                                break;
+
+                                            case "paste":
+                                                player.mode = 2;
+                                                break;
+
+                                            default:
+                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} error");
+                                                break;
+                                        }
+                                    }
+                                    break;
+
+                                case "brush":
+                                    if (param.Length > 1)
+                                    {
+                                        switch (param[1])
+                                        {
+                                            case "size":
+                                                try
+                                                {
+                                                    int n = Int32.Parse(param[2]);
+                                                    player.brushSize = n;
+                                                }
+                                                catch
+                                                {
+                                                    await con.SendAsync(MessageType.Chat, $"/pm {player.name} error");
+                                                }
+                                                break;
+
+                                            case "shape":
+                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} Haha! No...");
+                                                break;
+
+                                            default:
+                                                await con.SendAsync(MessageType.Chat, $"/pm {player.name} error");
                                                 break;
                                         }
                                     }

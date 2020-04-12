@@ -16,11 +16,18 @@ namespace CCBot
         public string name;
         public bool isMod;
 
+        // Movement Tracking
+        public bool isInGod = false;
+        /*public double x;
+        public double y;*/
+
         // !copy !cut !paste
         public Block[,,] clipboard;
+        public Coordinate copyTopLeftCorner;
 
         // !mode - Need to know who placed the block
-        //public int mode;
+        public int mode;
+        public int brushSize;
 
         public Player(int _id, string _name)
         {
@@ -28,7 +35,8 @@ namespace CCBot
             name = _name;
 
             // Always on start
-            //mode = 0;
+            mode = 0;
+            brushSize = 1;
 
             // Is the player a moderator?
             isMod = false;
@@ -114,6 +122,22 @@ namespace CCBot
         {
             //Console.WriteLine("sign");
             await Program.con.SendAsync(MessageType.PlaceBlock, l, x, y, id, text, morph);
+        }
+    }
+
+    /*
+     * Coordinate
+     */
+
+    public class Coordinate
+    {
+        public int x;
+        public int y;
+
+        public Coordinate(int _x, int _y)
+        {
+            x = _x;
+            y = _y;
         }
     }
 }
