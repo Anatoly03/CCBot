@@ -19,7 +19,7 @@ namespace CCBot
         // General
         public static Connection Con;
         public static Block[,,] World;
-        public static string WorldId = "YwxWWJH8nloP"; //"ZSgvAgo2ONps"; "TSz0cNfHyyVO"; "LylVqeLVd8V5";
+        public static string WorldId = "ZSgvAgo2ONps"; //"ZSgvAgo2ONps"; "TSz0cNfHyyVO"; "LylVqeLVd8V5";
         public static int Botid;
 
         // Players
@@ -340,6 +340,10 @@ namespace CCBot
                                     await blockBefore.Place(1, m.GetInt(2), m.GetInt(3));
                                 }
                                 break;
+
+                            case 4:
+                                await Fill(m.GetInt(1), m.GetInt(2), m.GetInt(3), m.GetInt(4), blockBefore.Id);
+                                break;
                         }
                     }
                     break;
@@ -367,6 +371,7 @@ namespace CCBot
                                                     player.Tell("!circle l x y d bid = Creates the border of the specified circular area. (!ci)");
                                                     player.Tell("!clear x1 y1 x2 y2 = Clears everything in the specified area. (!cl)");
                                                     player.Tell("!clearall = Clears everything.");
+                                                    player.Tell("!curve ... = Creates curves");
                                                     player.Tell("!fill l x1 y1 x2 y2 bid = Fills everything in the specified area with a block (!fl)");
                                                     player.Tell("!rect l x1 y1 x2 y2 bid = Creates the border of the rect of the specified area (!re)");
                                                     break;
@@ -381,6 +386,7 @@ namespace CCBot
                                                     player.Tell("Use !mode <modification name>");
                                                     player.Tell("rainbow: Try it out.");
                                                     player.Tell("paste: Not working yet.");
+                                                    player.Tell("fill: Place a block to fill a closed area of empty space.");
                                                     break;
 
                                                 case "mirror":
@@ -570,6 +576,91 @@ namespace CCBot
                                     }
                                     break;
 
+                                case "curve":
+                                case "cu":
+                                    if (param.Length % 2 == 0)
+                                    {
+                                        int bid = int.Parse(param[1]);
+                                        bool drawLines = param[3] == "t";
+
+                                        List<Coordinate> pos = new List<Coordinate>();
+                                        for (int i = 4; i < param.Length; i += 2)
+                                            pos.Add(new Coordinate(int.Parse(param[i]), int.Parse(param[i + 1])));
+
+                                        Queue<Coordinate> queue = new Queue<Coordinate>();
+                                        int[] k = Tartaglia((uint)pos.Count);
+                                        int n = pos.Count - 1;
+                                        int samples = int.Parse(param[2]);
+                                        for (int d = 0; d <= samples; d += 1)
+                                        {
+                                            double t = (double)d / samples;
+                                            Coordinate c = new Coordinate();
+                                            for (int i = 0; i <= n; i++)
+                                            {
+                                                c.X += (int)Math.Round(k[i] * pos[i].X * Math.Pow(1 - t, n - i) * Math.Pow(t, i));
+                                                c.Y += (int)Math.Round(k[i] * pos[i].Y * Math.Pow(1 - t, n - i) * Math.Pow(t, i));
+                                            }
+                                            queue.Enqueue(c);
+
+                                            if (drawLines)
+                                            {
+                                                if (queue.Count == 2)
+                                                {
+                                                    Coordinate c1 = queue.Dequeue(), c2 = queue.Peek();
+                                                    int x1 = c1.X, y1 = c1.Y, x2 = c2.X, y2 = c2.Y;
+
+                                                    int xC = x1 - x2;
+                                                    int yC = y1 - y2;
+
+                                                    if (Math.Abs(xC) >= Math.Abs(yC))
+                                                    {
+                                                        float modY = (float)yC / xC;
+
+                                                        if (x1 > x2)
+                                                            for (int x = x2, i = 0; x < x1; x++, i++)
+                                                            {
+                                                                await PlaceBlock(1, x, (int)Math.Round(y2 + modY * i), bid);
+                                                            }
+                                                        else
+                                                            for (int x = x1, i = 0; x < x2; x++, i++)
+                                                            {
+                                                                await PlaceBlock(1, x, (int)Math.Round(y1 + modY * i), bid);
+                                                            }
+                                                    }
+                                                    else
+                                                    {
+                                                        float modX = (float)xC / yC;
+
+                                                        if (y1 > y2)
+                                                        {
+                                                            for (int y = y2, i = 0; y < y1; y++, i++)
+                                                            {
+                                                                await PlaceBlock(1, (int)Math.Round(x2 + modX * i), y, bid);
+                                                            }
+                                                            await PlaceBlock(1, x1, y1, bid);
+                                                        }
+                                                        else
+                                                        {
+                                                            for (int y = y1, i = 0; y < y2; y++, i++)
+                                                            {
+                                                                await PlaceBlock(1, (int)Math.Round(x1 + modX * i), y, bid);
+                                                            }
+                                                            await PlaceBlock(1, x2, y2, bid);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Coordinate cd = queue.Dequeue();
+                                                await PlaceBlock(1, cd.X, cd.Y, bid);
+                                            }
+                                        }
+                                    }
+                                    else
+                                        player.Tell("Invalid number of parameters: must be an odd number (<bid> <sampleNum> <drawLines> <x0> <y0> ...)");
+                                    break;
+
                                 /*
                                  * Generation
                                  */
@@ -723,90 +814,6 @@ namespace CCBot
                                         }
                                     }
                                     break;
-                                case "curve":
-                                case "cu":
-                                    if (param.Length % 2 == 0)
-                                    {
-                                        int bid = int.Parse(param[1]);
-                                        bool drawLines = param[3] == "t";
-
-                                        List<Coordinate> pos = new List<Coordinate>();
-                                        for(int i = 4; i < param.Length; i += 2)
-                                            pos.Add(new Coordinate(int.Parse(param[i]), int.Parse(param[i + 1])));
-
-                                        Queue<Coordinate> queue = new Queue<Coordinate>();
-                                        int[] k = Tartaglia((uint)pos.Count);
-                                        int n = pos.Count - 1;
-                                        int samples = int.Parse(param[2]);
-                                        for (int d = 0; d <= samples; d += 1)
-                                        {
-                                            double t = (double)d / samples;
-                                            Coordinate c = new Coordinate();
-                                            for (int i = 0; i <= n; i++)
-                                            {
-                                                c.X += (int)Math.Round(k[i] * pos[i].X * Math.Pow(1 - t, n - i) * Math.Pow(t, i));
-                                                c.Y += (int)Math.Round(k[i] * pos[i].Y * Math.Pow(1 - t, n - i) * Math.Pow(t, i));
-                                            }
-                                            queue.Enqueue(c);
-
-                                            if (drawLines)
-                                            {
-                                                if (queue.Count == 2)
-                                                {
-                                                    Coordinate c1 = queue.Dequeue(), c2 = queue.Peek();
-                                                    int x1 = c1.X, y1 = c1.Y, x2 = c2.X, y2 = c2.Y;
-
-                                                    int xC = x1 - x2;
-                                                    int yC = y1 - y2;
-
-                                                    if (Math.Abs(xC) >= Math.Abs(yC))
-                                                    {
-                                                        float modY = (float)yC / xC;
-
-                                                        if (x1 > x2)
-                                                            for (int x = x2, i = 0; x < x1; x++, i++)
-                                                            {
-                                                                await PlaceBlock(1, x, (int)Math.Round(y2 + modY * i), bid);
-                                                            }
-                                                        else
-                                                            for (int x = x1, i = 0; x < x2; x++, i++)
-                                                            {
-                                                                await PlaceBlock(1, x, (int)Math.Round(y1 + modY * i), bid);
-                                                            }
-                                                    }
-                                                    else
-                                                    {
-                                                        float modX = (float)xC / yC;
-
-                                                        if (y1 > y2)
-                                                        {
-                                                            for (int y = y2, i = 0; y < y1; y++, i++)
-                                                            {
-                                                                await PlaceBlock(1, (int)Math.Round(x2 + modX * i), y, bid);
-                                                            }
-                                                            await PlaceBlock(1, x1, y1, bid);
-                                                        }
-                                                        else
-                                                        {
-                                                            for (int y = y1, i = 0; y < y2; y++, i++)
-                                                            {
-                                                                await PlaceBlock(1, (int)Math.Round(x1 + modX * i), y, bid);
-                                                            }
-                                                            await PlaceBlock(1, x2, y2, bid);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            else
-                                            {
-                                                Coordinate cd = queue.Dequeue();
-                                                await PlaceBlock(1, cd.X, cd.Y, bid);
-                                            }
-                                        }
-                                    }
-                                    else
-                                        player.Tell("Invalid number of parameters: must be an odd number (<bid> <sampleNum> <drawLines> <x0> <y0> ...)");
-                                    break;
 
                                 /*
                                  * Setting
@@ -825,7 +832,6 @@ namespace CCBot
 
                                             case "rainbow":
                                                 player.Mode = 1;
-                                                player.Mirror = 0;
                                                 break;
 
                                             case "paste":
@@ -834,6 +840,10 @@ namespace CCBot
                                                 break;
 
                                             // 3 is mirror awaiting
+
+                                            case "fill":
+                                                player.Mode = 4;
+                                                break;
 
                                             default:
                                                 player.Tell("error");
@@ -884,6 +894,34 @@ namespace CCBot
             {
                 await Con.SendAsync(MessageType.PlaceBlock, l, x, y, id);
                 World[l, x, y] = new Block(id);
+            }
+        }
+
+        public static async Task Fill(int l, int x, int y, int id, int baseid)
+        {
+            if (baseid != id)
+            {
+                if (World[l, x, y].Id != id)
+                {
+                    await Con.SendAsync(MessageType.PlaceBlock, l, x, y, id);
+                    World[l, x, y] = new Block(id);
+                }
+
+                if (x > 0)
+                    if (World[l, x - 1, y].Id == baseid)
+                        await Fill(l, x - 1, y, id, baseid);
+
+                if (y > 0)
+                    if (World[l, x, y - 1].Id == baseid)
+                        await Fill(l, x, y - 1, id, baseid);
+
+                if (x < 199)
+                    if (World[l, x + 1, y].Id == baseid)
+                        await Fill(l, x + 1, y, id, baseid);
+
+                if (y < 199)
+                    if (World[l, x, y + 1].Id == baseid)
+                        await Fill(l, x, y + 1, id, baseid);
             }
         }
 
