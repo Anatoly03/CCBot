@@ -331,7 +331,7 @@ namespace CCBot
                                                 player.Clipboard[1, m.GetInt(2) - tL.X, m.GetInt(3) - tL.Y] = blockBefore;
                                             }
 
-                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} [CC] Content copied to clipboard!");
+                                            player.Tell("[CC] Content copied to clipboard!");
                                         }
 
                                         break;
@@ -547,7 +547,7 @@ namespace CCBot
                                         }
                                         catch
                                         {
-                                            await Task.Run(async () =>
+                                            await Task.Run(() =>
                                             {
                                                 player.Tell("error");
                                             });
@@ -713,15 +713,16 @@ namespace CCBot
                                     if (param.Length % 2 == 0)
                                     {
                                         int bid = int.Parse(param[1]);
+                                        bool drawLines = param[3] == "t";
 
                                         List<Coordinate> pos = new List<Coordinate>();
-                                        for(int i = 2; i < param.Length; i += 2)
+                                        for(int i = 4; i < param.Length; i += 2)
                                             pos.Add(new Coordinate(int.Parse(param[i]), int.Parse(param[i + 1])));
 
                                         Queue<Coordinate> queue = new Queue<Coordinate>();
                                         int[] k = Tartaglia((uint)pos.Count);
                                         int n = pos.Count - 1;
-                                        int samples = 20;   // Not ideal for small curves.
+                                        int samples = int.Parse(param[2]);
                                         for (int d = 0; d <= samples; d += 1)
                                         {
                                             double t = (double)d / samples;
@@ -733,56 +734,63 @@ namespace CCBot
                                             }
                                             queue.Enqueue(c);
 
-                                            if (queue.Count == 2)
+                                            if (drawLines)
                                             {
-                                                Coordinate c1 = queue.Dequeue(), c2 = queue.Peek();
-                                                Console.WriteLine(c1.X + " " + c1.Y);
-                                                int x1 = c1.X, y1 = c1.Y, x2 = c2.X, y2 = c2.Y;
-
-                                                int xC = x1 - x2;
-                                                int yC = y1 - y2;
-
-                                                if (Math.Abs(xC) >= Math.Abs(yC))
+                                                if (queue.Count == 2)
                                                 {
-                                                    float modY = (float)yC / xC;
+                                                    Coordinate c1 = queue.Dequeue(), c2 = queue.Peek();
+                                                    int x1 = c1.X, y1 = c1.Y, x2 = c2.X, y2 = c2.Y;
 
-                                                    if (x1 > x2)
-                                                        for (int x = x2, i = 0; x < x1; x++, i++)
-                                                        {
-                                                            await PlaceBlock(1, x, (int)Math.Round(y2 + modY * i), bid);
-                                                        }
-                                                    else
-                                                        for (int x = x1, i = 0; x < x2; x++, i++)
-                                                        {
-                                                            await PlaceBlock(1, x, (int)Math.Round(y1 + modY * i), bid);
-                                                        }
-                                                }
-                                                else
-                                                {
-                                                    float modX = (float)xC / yC;
+                                                    int xC = x1 - x2;
+                                                    int yC = y1 - y2;
 
-                                                    if (y1 > y2)
+                                                    if (Math.Abs(xC) >= Math.Abs(yC))
                                                     {
-                                                        for (int y = y2, i = 0; y < y1; y++, i++)
-                                                        {
-                                                            await PlaceBlock(1, (int)Math.Round(x2 + modX * i), y, bid);
-                                                        }
-                                                        await PlaceBlock(1, x1, y1, bid);
+                                                        float modY = (float)yC / xC;
+
+                                                        if (x1 > x2)
+                                                            for (int x = x2, i = 0; x < x1; x++, i++)
+                                                            {
+                                                                await PlaceBlock(1, x, (int)Math.Round(y2 + modY * i), bid);
+                                                            }
+                                                        else
+                                                            for (int x = x1, i = 0; x < x2; x++, i++)
+                                                            {
+                                                                await PlaceBlock(1, x, (int)Math.Round(y1 + modY * i), bid);
+                                                            }
                                                     }
                                                     else
                                                     {
-                                                        for (int y = y1, i = 0; y < y2; y++, i++)
+                                                        float modX = (float)xC / yC;
+
+                                                        if (y1 > y2)
                                                         {
-                                                            await PlaceBlock(1, (int)Math.Round(x1 + modX * i), y, bid);
+                                                            for (int y = y2, i = 0; y < y1; y++, i++)
+                                                            {
+                                                                await PlaceBlock(1, (int)Math.Round(x2 + modX * i), y, bid);
+                                                            }
+                                                            await PlaceBlock(1, x1, y1, bid);
                                                         }
-                                                        await PlaceBlock(1, x2, y2, bid);
+                                                        else
+                                                        {
+                                                            for (int y = y1, i = 0; y < y2; y++, i++)
+                                                            {
+                                                                await PlaceBlock(1, (int)Math.Round(x1 + modX * i), y, bid);
+                                                            }
+                                                            await PlaceBlock(1, x2, y2, bid);
+                                                        }
                                                     }
                                                 }
+                                            }
+                                            else
+                                            {
+                                                Coordinate cd = queue.Dequeue();
+                                                await PlaceBlock(1, cd.X, cd.Y, bid);
                                             }
                                         }
                                     }
                                     else
-                                        player.Tell("Invalid number of parameters: must be an odd number (<bid> <x0> <y0> ...)");
+                                        player.Tell("Invalid number of parameters: must be an odd number (<bid> <sampleNum> <drawLines> <x0> <y0> ...)");
                                     break;
 
                                 /*
