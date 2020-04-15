@@ -19,7 +19,15 @@ Say `!mode paste` to enter a level-manipulating danger zone:
 
 - Place a **white basic block** (bid: 1) to set the top-left checkpoint of the area you want to copy.
 - Place a **black basic block** (bid: 3) to set the bottom-right checkpoint of the area you want to copy. (The content should naw be copied)
-- Place a **grey basic block** (bid: 2) to paste the contents of the clipboard. 
+- Place a **grey basic block** (bid: 2) to paste the contents of the clipboard.
+
+#### Saving assets
+
+|             |       Parameters      |                Description                |
+|:-----------:|:---------------------:|:-----------------------------------------:|
+| !saveasset  | fileName              | Saved clipboard -> storage                |
+| !getasset   | fileName              | Gets storage -> clipboard                 |
+| !listassets |                       | Lists all saved assets for now            |
 
 ### Clear
 
