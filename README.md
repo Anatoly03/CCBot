@@ -4,8 +4,10 @@
 
 - [Commands](#commands)
   - [Pasteboard](#pasteboard)
+  - [Storage](#saving-assets)
   - [Clear](#clear)
   - [Basic Tools](#basic-tools)
+  - [Mirror](#mirror)
 - [Read More](#useful-links)
 
 ## Commands
