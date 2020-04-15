@@ -237,6 +237,33 @@ namespace CCBot
                         if (player.BrushSize < 1 || player == null)
                             await blockBefore.Place(m.GetInt(1), m.GetInt(2), m.GetInt(3));
 
+                        if (player.Mode == 0)
+                        {
+                            if (player.Mirror == 1 || player.Mirror == 3)
+                            {
+                                int newY = 2 * player.Checkpoint.Y - m.GetInt(3);
+                                if (player.Mirror == 3) newY++;
+                                await World[m.GetInt(1), m.GetInt(2), m.GetInt(3)].Place(m.GetInt(1), m.GetInt(2), newY);
+                            }
+                            else if (player.Mirror == 2 || player.Mirror == 4)
+                            {
+                                int newX = 2 * player.Checkpoint.X - m.GetInt(2);
+                                if (player.Mirror == 4) newX++;
+                                await World[m.GetInt(1), m.GetInt(2), m.GetInt(3)].Place(m.GetInt(1), newX, m.GetInt(3));
+                            }
+                            else if (player.Mirror == 5 || player.Mirror == 6)
+                            {
+                                int newX = 2 * player.Checkpoint.X - m.GetInt(2);
+                                int newY = 2 * player.Checkpoint.Y - m.GetInt(3);
+                                if (player.Mirror == 6)
+                                {
+                                    newX++;
+                                    newY++;
+                                }
+                                await World[m.GetInt(1), m.GetInt(2), m.GetInt(3)].Place(m.GetInt(1), newX, newY);
+                            }
+                        }
+
                         switch (player.Mode)
                         {
                             case 1:
@@ -302,6 +329,15 @@ namespace CCBot
                                         break;
                                 }
                                 break;
+
+                            case 3:
+                                if (bid == 2)
+                                {
+                                    player.Mode = 0;
+                                    player.Checkpoint = new Coordinate(m.GetInt(2), m.GetInt(3));
+                                    await blockBefore.Place(1, m.GetInt(2), m.GetInt(3));
+                                }
+                                break;
                         }
                     }
                     break;
@@ -345,6 +381,20 @@ namespace CCBot
                                                     await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} paste: Not working yet.");
                                                     break;
 
+                                                case "mirror":
+                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Use !mirror <type>. Then place a grey basic block to define the mirror centre.");
+                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} h and v are horizontal and vertical mirrors around a line.");
+                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} p is a point mirror around a point.");
+                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} h#, v#, p# equavalently shift the centre by 0.5 blocks.");
+                                                    break;
+
+                                                case "storage":
+                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Storage Modifications");
+                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !getasset <fileName> copies a ready asset to your clipboard.");
+                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !listassets PM's you a list of all assets that exist.");
+                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} DO NOT USE !saveassets for now!!!");
+                                                    break;
+
                                                 case "settings":
                                                     await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !brush size d: Sets your brush size");
                                                     break;
@@ -353,7 +403,7 @@ namespace CCBot
                                         else
                                         {
                                             await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} [Creative Crew Bot] For the block id's, see https://github.com/capasha/EEUProtocol/blob/master/Blocks.md");
-                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} List of commands filtered by usage: !help <tools | clipboard | modes | settings>");
+                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} List of commands filtered by usage: !help <tools | clipboard | modes | mirror | settings | storage>");
                                         }
                                     });
                                     break;
@@ -587,6 +637,80 @@ namespace CCBot
                                     break;
 
                                 /*
+                                 * Mirror
+                                 */
+
+                                case "mirror":
+                                case "mi":
+                                    if (param.Length > 1)
+                                    {
+                                        switch (param[1])
+                                        {
+                                            // Horizontal Mirror
+                                            case "h":
+                                                player.Mode = 3;
+                                                player.Mirror = 1;
+                                                break;
+
+                                            // Vertical Mirror
+                                            case "v":
+                                                player.Mode = 3;
+                                                player.Mirror = 2;
+                                                break;
+
+                                            // Horizontal Mirror shifted by 0.5 blocks down
+                                            case "h#":
+                                                player.Mode = 3;
+                                                player.Mirror = 3;
+                                                break;
+
+                                            // Vertical Mirror shifted by 0.5 blocks right
+                                            case "v#":
+                                                player.Mode = 3;
+                                                player.Mirror = 4;
+                                                break;
+
+                                            // Point Mirror
+                                            case "p":
+                                                player.Mode = 3;
+                                                player.Mirror = 5;
+                                                break;
+
+                                            // Point Mirror shifted by 0.5 blocks diagonal
+                                            case "p#":
+                                                player.Mode = 3;
+                                                player.Mirror = 6;
+                                                break;
+
+                                            // Diagonal x = y Mirror
+                                            case "d+":
+                                                player.Mode = 3;
+                                                player.Mirror = 7;
+                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                break;
+
+                                            // Diagonal x = -y Mirror
+                                            case "d-":
+                                                player.Mode = 3;
+                                                player.Mirror = 8;
+                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                break;
+
+                                            // No Mirror/ Default
+                                            case "off":
+                                                player.Mode = 0;
+                                                player.Mirror = 0;
+                                                player.BrushSize = 1;
+                                                break;
+
+                                            default:
+                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                break;
+                                        }
+                                    }
+                                    break;
+
+                                /*
                                  * Setting
                                  */
 
@@ -597,15 +721,21 @@ namespace CCBot
                                         {
                                             case "default":
                                                 player.Mode = 0;
+                                                player.Mirror = 0;
+                                                player.BrushSize = 1;
                                                 break;
 
                                             case "rainbow":
                                                 player.Mode = 1;
+                                                player.Mirror = 0;
                                                 break;
 
                                             case "paste":
                                                 player.Mode = 2;
+                                                player.Mirror = 0;
                                                 break;
+
+                                            // 3 is mirror awaiting
 
                                             default:
                                                 await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");

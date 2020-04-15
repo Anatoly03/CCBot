@@ -46,6 +46,18 @@ Components that clear entire regions.
 | !rect       | layer x1 y1 x2 y2 bid | Creates the border of a rectangular area. |
 | !circle     | layer x y radius bid  | Creates the border of a circular area.    |
 
+### Mirror
+
+Usage `!mirror <type>`
+
+|  Parameter |               Description               |
+|:----------:|:---------------------------------------:|
+| h          | Mirror around a horizontal axis         |
+| v          | Mirror around a vertical axis           |
+| p          | Mirror around a point                   |
+| h#, v#, p# | Shifts the mirror centre by 0.5 blocks. |
+| off        | Switch back to default mode             |
+
 ## Modes
 
 Modes can be set with the `!mode <name>` command, where name represents the name of the mode.

@@ -22,6 +22,7 @@ namespace CCBot
 
         // !mode - Need to know who placed the block
         public int Mode { get; set; }
+        public int Mirror { get; set; }
         public int BrushSize { get; set; }
         public Coordinate Checkpoint { get; set; }
 
@@ -32,6 +33,7 @@ namespace CCBot
 
             // Always on start
             Mode = 0;
+            Mirror = 0;
             BrushSize = 1;
 
             // Is the player a moderator?
