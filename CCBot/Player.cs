@@ -1,8 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using EEUniverse.Library;
-
+﻿
 namespace CCBot
 {
     /*
@@ -23,11 +19,11 @@ namespace CCBot
 
         // !copy !cut !paste
         public Block[,,] Clipboard { get; set; }
-        public Coordinate CopyTopLeftCorner { get; set; }
 
         // !mode - Need to know who placed the block
         public int Mode { get; set; }
         public int BrushSize { get; set; }
+        public Coordinate Checkpoint { get; set; }
 
         public Player(int _id, string _name)
         {

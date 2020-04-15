@@ -19,7 +19,7 @@ namespace CCBot
         // General
         public static Connection Con;
         public static Block[,,] World;
-        public static string WorldId = "ZSgvAgo2ONps";//"LylVqeLVd8V5";
+        public static string WorldId = "ZSgvAgo2ONps";//"TSz0cNfHyyVO";//"LylVqeLVd8V5";
         public static int Botid;
 
         // Players
@@ -64,7 +64,15 @@ namespace CCBot
 
                 Con.OnMessage += async (s, m) =>
                 {
-                    await Main3(m);
+                    try
+                    {
+                        await Main3(m);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Bot almost crashed!");
+                        Console.Write(e);
+                    }
                 };
                 await Con.SendAsync(MessageType.Init, 0);
 
@@ -76,24 +84,6 @@ namespace CCBot
             }
         }
 
-        /*
-        https://github.com/Anatoly03/CCBot/projects/2
-        
-        Yeah it was temporary
-        as you see i moved copy and paste over to blocks)
-        okay
-        you can also add and help me doing those cards on git))
-        I see
-        I used to have drawing commands require that you place blocks instead of coordinates in the command
-        like .square
-        and it would wait for you to place 2 blocks and it would figure out how to draw the line and the other three
-        or .circle and then an arbitrary point and the center
-
-        added the curve note -- it's 'In Progress' already? )) That's good))
-        I have the code to do it
-        okay 
-        let's ask our members what they need - edi joined
-        */
         static async Task Main3(Message m)
         {
             Player player;
@@ -222,7 +212,7 @@ namespace CCBot
                             bool flip = m.GetBool(8);
                             World[m.GetInt(1), m.GetInt(2), m.GetInt(3)] = new Portal(m.GetInt(4), rotation, p_id, t_id, flip);
                             break;
-// line 68 // i asked edi and k what they did 
+
                         // Effects
                         case 93:
                         case 94:
@@ -237,11 +227,15 @@ namespace CCBot
                         player = Players.FirstOrDefault(p => p.Id == m.GetInt(0));
                         int bid = m.GetInt(4);
 
-                        if (player.BrushSize > 1 && player.Mode == 0)
-                            for (int x = 0; x < Width; x++)
-                                for (int y = 0; y < Height; y++)
-                                    if (Math.Pow(m.GetInt(2) - x, 2) + Math.Pow(m.GetInt(3) - y, 2) < Math.Pow(player.BrushSize, 2))
-                                        await PlaceBlock(m.GetInt(1), x, y, bid);
+                        if (player != null)
+                            if (player.BrushSize > 1 && player.Mode == 0)
+                                for (int x = 0; x < Width; x++)
+                                    for (int y = 0; y < Height; y++)
+                                        if (Math.Pow(m.GetInt(2) - x, 2) + Math.Pow(m.GetInt(3) - y, 2) < Math.Pow(player.BrushSize, 2))
+                                            await World[m.GetInt(1), m.GetInt(2), m.GetInt(3)].Place(m.GetInt(1), x, y);
+
+                        if (player.BrushSize < 1 || player == null)
+                            await blockBefore.Place(m.GetInt(1), m.GetInt(2), m.GetInt(3));
 
                         switch (player.Mode)
                         {
@@ -256,7 +250,7 @@ namespace CCBot
                                     // Set checkpoint for copying content
                                     case 1:
 
-                                        player.CopyTopLeftCorner = new Coordinate(m.GetInt(2), m.GetInt(3));
+                                        player.Checkpoint = new Coordinate(m.GetInt(2), m.GetInt(3));
                                         await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} [CC] Checkpoint set!");
                                         await blockBefore.Place(1, m.GetInt(2), m.GetInt(3));
 
@@ -281,22 +275,25 @@ namespace CCBot
                                     // Copy
                                     case 3:
 
-                                        if (Math.Abs((player.CopyTopLeftCorner.X - m.GetInt(2)) * (player.CopyTopLeftCorner.Y - m.GetInt(3))) > 0)
+                                        if (Math.Abs((player.Checkpoint.X - m.GetInt(2)) * (player.Checkpoint.Y - m.GetInt(3))) > 0)
                                         {
                                             await blockBefore.Place(1, m.GetInt(2), m.GetInt(3));
 
-                                            if (player.CopyTopLeftCorner != null)
+                                            if (player.Checkpoint != null)
                                             {
-                                                player.Clipboard = new Block[2, m.GetInt(2) - player.CopyTopLeftCorner.X + 1, m.GetInt(3) - player.CopyTopLeftCorner.Y + 1];
+                                                Coordinate tL = new Coordinate(Math.Min(player.Checkpoint.X, m.GetInt(2)), Math.Min(player.Checkpoint.Y, m.GetInt(3)));
+                                                Coordinate bR = new Coordinate(Math.Max(player.Checkpoint.X, m.GetInt(2)), Math.Max(player.Checkpoint.Y, m.GetInt(3)));
+
+                                                player.Clipboard = new Block[2, bR.X - tL.X + 1, bR.Y - tL.Y + 1];
 
                                                 for (int l = 0; l < 2; l++)
-                                                    for (int x = player.CopyTopLeftCorner.X; x < m.GetInt(2) + 1; x++)
-                                                        for (int y = player.CopyTopLeftCorner.Y; y < m.GetInt(3) + 1; y++)
+                                                    for (int x = tL.X; x < bR.X + 1; x++)
+                                                        for (int y = tL.Y; y < bR.Y + 1; y++)
                                                             if (x >= 0 && y >= 0 && x < Width && y < Height)
                                                                 if (World[l, x, y].Id != 0)
-                                                                    player.Clipboard[l, x - player.CopyTopLeftCorner.X, y - player.CopyTopLeftCorner.Y] = World[l, x, y];
+                                                                    player.Clipboard[l, x - tL.X, y - tL.Y] = World[l, x, y];
 
-                                                player.Clipboard[1, m.GetInt(2) - player.CopyTopLeftCorner.X, m.GetInt(3) - player.CopyTopLeftCorner.Y] = blockBefore;
+                                                player.Clipboard[1, m.GetInt(2) - tL.X, m.GetInt(3) - tL.Y] = blockBefore;
                                             }
 
                                             await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} [CC] Content copied to clipboard!");
@@ -510,6 +507,86 @@ namespace CCBot
                                     break;
 
                                 /*
+                                 * Generation
+                                 */
+
+                                case "gen":
+                                    if (param.Length > 1)
+                                    {
+                                        Generator gen = new Generator();
+
+                                        switch (param[1])
+                                        {
+                                            case "terrain":
+                                                await gen.Terrain();
+                                                break;
+
+                                            case "sky":
+                                                await gen.Sky();
+                                                break;
+
+                                            default:
+                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                break;
+                                        }
+                                    }
+                                    break;
+
+                                /*
+                                 * Assets
+                                 */
+
+                                case "saveasset":
+                                    if (param.Length > 1)
+                                    {
+                                        string buildName = param[1];
+
+                                        if (File.Exists($"../../../assets/{buildName}.json"))
+                                        {
+                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} The asset '{buildName}' is already existing!");
+                                        }
+                                        else
+                                        {
+                                            using (StreamWriter file = File.CreateText($"../../../assets/{buildName}.json"))
+                                            {
+                                                var serializer = JsonConvert.SerializeObject(player.Clipboard, Json_settings);
+                                                file.WriteLine(serializer);
+                                            }
+                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Saved!");
+                                        }
+                                    }
+                                    break;
+
+                                case "getasset":
+                                    if (param.Length > 1)
+                                    {
+                                        string buildName = param[1];
+
+                                        if (File.Exists($"../../../assets/{buildName}.json"))
+                                        {
+                                            var BuildData = File.ReadAllText($"../../../assets/{buildName}.json");
+                                            var deserializedValueBuild = JsonConvert.DeserializeObject<Block[,,]>(BuildData, Json_settings);
+
+                                            player.Clipboard = deserializedValueBuild;
+                                        }
+                                        else
+                                        {
+                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} The asset '{buildName}' is not existing!");
+                                        }
+                                    }
+                                    break;
+
+                                case "listassets":
+                                    string[] files = Directory.GetFiles($"../../../assets", "*.json").Select(Path.GetFileName).ToArray();
+
+                                    foreach (string k in files)
+                                    {
+                                        await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} {k}");
+                                    }
+
+                                    break;
+
+                                /*
                                  * Setting
                                  */
 
@@ -573,7 +650,7 @@ namespace CCBot
          * Functions
          */
 
-        static async Task PlaceBlock(int l, int x, int y, int id)
+        public static async Task PlaceBlock(int l, int x, int y, int id)
         {
             if (World[l, x, y].Id != id)
             {
@@ -582,13 +659,13 @@ namespace CCBot
             }
         }
 
-        /*static async Task PlaceSign(int x, int y, int id, string text, int morph)
+        /*public static async Task PlaceSign(int x, int y, int id, string text, int morph)
         {
             await con.SendAsync(MessageType.PlaceBlock, 1, x, y, id, text, morph);
             world[1, x, y] = new Sign(id, text, morph);
         }
 
-        static async Task PlacePortal(int x, int y, int id, int morph, int _p_id, int _t_id, bool _flip)
+        public static async Task PlacePortal(int x, int y, int id, int morph, int _p_id, int _t_id, bool _flip)
         {
             await con.SendAsync(MessageType.PlaceBlock, 1, x, y, id, morph, _p_id, _t_id, _flip);
             world[1, x, y] = new Portal(id, morph, _p_id, _t_id, _flip);

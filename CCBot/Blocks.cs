@@ -23,10 +23,9 @@ namespace CCBot
         public virtual async Task Place(int l, int x, int y)
         {
             //Console.WriteLine("base");
-            if (Program.World[l, x, y].Id != Id)
-            {
-                await Program.Con.SendAsync(MessageType.PlaceBlock, l, x, y, Id);
-            }
+            if (x >= 0 && y >= 0 && x < Program.Width && y < Program.Height)
+                if (Program.World[l, x, y].Id != Id)
+                    await Program.Con.SendAsync(MessageType.PlaceBlock, l, x, y, Id);
         }
     }
 
@@ -41,7 +40,9 @@ namespace CCBot
 
         public override async Task Place(int l, int x, int y)
         {
-            await Program.Con.SendAsync(MessageType.PlaceBlock, l, x, y, Id, Value);
+            if (x >= 0 && y >= 0 && x < Program.Width && y < Program.Height)
+                if (Program.World[l, x, y].Id != Id)
+                    await Program.Con.SendAsync(MessageType.PlaceBlock, l, x, y, Id, Value);
         }
     }
 
@@ -62,7 +63,9 @@ namespace CCBot
 
         public override async Task Place(int l, int x, int y)
         {
-            await Program.Con.SendAsync(MessageType.PlaceBlock, l, x, y, Id, Rotation, PortalId, TargetId, Flip);
+            if (x >= 0 && y >= 0 && x < Program.Width && y < Program.Height)
+                if (Program.World[l, x, y].Id != Id)
+                    await Program.Con.SendAsync(MessageType.PlaceBlock, l, x, y, Id, Rotation, PortalId, TargetId, Flip);
         }
     }
 
@@ -79,8 +82,9 @@ namespace CCBot
 
         public override async Task Place(int l, int x, int y)
         {
-            //Console.WriteLine("sign");
-            await Program.Con.SendAsync(MessageType.PlaceBlock, l, x, y, Id, Text, Morph);
+            if (x >= 0 && y >= 0 && x < Program.Width && y < Program.Height)
+                if (Program.World[l, x, y].Id != Id)
+                    await Program.Con.SendAsync(MessageType.PlaceBlock, l, x, y, Id, Text, Morph);
         }
     }
 }
