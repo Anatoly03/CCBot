@@ -19,7 +19,7 @@ namespace CCBot
         // General
         public static Connection Con;
         public static Block[,,] World;
-        public static string WorldId = "ZSgvAgo2ONps";//"TSz0cNfHyyVO";//"LylVqeLVd8V5";
+        public static string WorldId = "LylVqeLVd8V5";//"ZSgvAgo2ONps";//"TSz0cNfHyyVO";
         public static int Botid;
 
         // Players
@@ -141,13 +141,12 @@ namespace CCBot
                             }
                         }
 
-                    /*for (int x = 0; x < width; x++)
-                        for (int y = 0; y < height; y++)
-                        {
-                            await con.SendAsync(MessageType.PlaceBlock, 1, x, y, 0);
-                        }
+                    /*for (int x = 0; x < Width; x++)
+                        for (int y = 0; y < Height; y++)
+                            if (World[1, x, y].Id == 20)
+                                await PlaceBlock(1, x, y, 80);*/
 
-                    for (int x = 0; x < width; x++)
+                    /*for (int x = 0; x < width; x++)
                         for (int y = 0; y < height; y++)
                         {
                             //await world[1, x, y].Place(1, x, y);
@@ -163,8 +162,8 @@ namespace CCBot
                     Players.Add(new Player(m.GetInt(0), m.GetString(1).ToLower()));
                     player = Players.FirstOrDefault(p => p.Id == m.GetInt(0));
 
-                    if (m.Type == MessageType.PlayerJoin)
-                        await Con.SendAsync(MessageType.Chat, $"[CC] {player.Name} joined!");
+                    //if (m.Type == MessageType.PlayerJoin)
+                        //await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Welcome!");
 
                     if (player.IsMod)
                         await Con.SendAsync(MessageType.Chat, $"/giveedit {player.Name}"); // If the world belongs to the owner of the bot, give it a try :)
@@ -175,8 +174,6 @@ namespace CCBot
                 case MessageType.PlayerExit:
                     player = Players.FirstOrDefault(p => p.Id == m.GetInt(0));
                     Players.RemoveAll(p => p.Id == m.GetInt(0));
-
-                    await Con.SendAsync(MessageType.Chat, $"[CC] {player.Name} left!");
 
                     break;
 
@@ -359,7 +356,7 @@ namespace CCBot
                                     {
                                         if (param.Length > 1)
                                         {
-                                            switch (param[0])
+                                            switch (param[1])
                                             {
                                                 case "tools":
                                                     await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !circle l x y d bid = Creates the border of the specified circular area. (!ci)");
@@ -367,6 +364,7 @@ namespace CCBot
                                                     await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !clearall = Clears everything.");
                                                     await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !fill l x1 y1 x2 y2 bid = Fills everything in the specified area with a block (!fl)");
                                                     await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !rect l x1 y1 x2 y2 bid = Creates the border of the rect of the specified area (!re)");
+                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !replaceall bid bidNew = Replaces all blocks of id bid to bidNew");
                                                     break;
 
                                                 case "clipboard":
@@ -552,6 +550,27 @@ namespace CCBot
                                             {
                                                 await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
                                             });
+                                        }
+                                    }
+                                    break;
+
+                                case "replaceall":
+                                    if (param.Length > 2)
+                                    {
+                                        try
+                                        {
+                                            int bid = Int32.Parse(param[1]);
+                                            int bid2 = Int32.Parse(param[2]);
+
+                                            for (int l = 0; l < 2; l++)
+                                                for (int x = 0; x < Width; x++)
+                                                    for (int y = 0; y < Height; y++)
+                                                        if (World[1, x, y].Id == bid)
+                                                            await PlaceBlock(l, x, y, bid2);
+                                        }
+                                        catch
+                                        {
+                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
                                         }
                                     }
                                     break;
