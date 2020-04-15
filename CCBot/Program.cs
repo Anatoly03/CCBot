@@ -354,7 +354,7 @@ namespace CCBot
 
                     if (m.GetString(1).StartsWith("!", StringComparison.Ordinal) || m.GetString(1).StartsWith(".", StringComparison.Ordinal))
                     {
-                        string[] param = m.GetString(1).ToLower().Substring(1).Split(" ");
+                        string[] param = m.GetString(1).ToLower().Substring(1).Split(" ", StringSplitOptions.RemoveEmptyEntries);
                         string cmd = param[0];
                         player = Players.FirstOrDefault(p => p.Id == m.GetInt(0));
 
