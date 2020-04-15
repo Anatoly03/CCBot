@@ -44,5 +44,18 @@ namespace CCBot
                 IsMod = true;
             }
         }
+
+        /// <summary>
+        /// Sends a private message to the player who sent the command.
+        /// </summary>
+        /// <param name="message"> The message. </param>
+        public void Tell(string message) => Program.SayPrivate(Name, message);
+
+        /// <summary>
+        /// Sends a private message to the player who sent the command.
+        /// </summary>
+        /// <param name="format"> The formatted message. </param>
+        /// <param name="args"> The arguments. </param>
+        public void Tell(string format, params object[] args) => Program.SayPrivate(Name, format, args);
     }
 }
