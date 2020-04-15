@@ -16,5 +16,9 @@ namespace CCBot
             X = _x;
             Y = _y;
         }
+
+        public Coordinate()
+        {
+        }
     }
 }

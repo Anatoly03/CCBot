@@ -19,7 +19,7 @@ namespace CCBot
         // General
         public static Connection Con;
         public static Block[,,] World;
-        public static string WorldId = "LylVqeLVd8V5";//"ZSgvAgo2ONps";//"TSz0cNfHyyVO";
+        public static string WorldId = "YwxWWJH8nloP"; //"ZSgvAgo2ONps"; "TSz0cNfHyyVO"; "LylVqeLVd8V5";
         public static int Botid;
 
         // Players
@@ -47,17 +47,25 @@ namespace CCBot
             foreach (string s in deserializedValuesPlayers)
                 Mods.Add(s);
 
-            using (StreamReader r = File.OpenText("../../../cookie.txt"))
-                await Main2(r.ReadToEnd());
+            //using (StreamReader r = File.OpenText("../../../cookie.txt"))
+            //    await Main2(r.ReadToEnd());
+
+            await Main2(File.ReadAllLines("../../../cookie.txt"));
         }
 
-        static async Task Main2(string token)
+        static async Task Main2(string[] data)
         {
             Console.WriteLine("Logging in...");
 
             try
             {
-                var client = await GoogleLogin.GetClientFromCookieAsync(token);
+                bool isGoogleToken = data[0] == "google" ? true : false;
+                Client client;
+                if (isGoogleToken)
+                    client = await GoogleLogin.GetClientFromCookieAsync(data[1]);
+                else
+                    client = new Client(data[1]);
+
                 await client.ConnectAsync();
 
                 Con = client.CreateWorldConnection(WorldId);
@@ -93,7 +101,7 @@ namespace CCBot
                 case MessageType.Init:
 
                     Console.WriteLine("Logged in!");
-                    await Con.SendAsync(MessageType.Chat, $"[CC] Connected!");
+                    Say($"[CC] Connected!");
                     Botid = m.GetInt(0);
 
                     World = new Block[2, m.GetInt(9), m.GetInt(10)];
@@ -162,11 +170,8 @@ namespace CCBot
                     Players.Add(new Player(m.GetInt(0), m.GetString(1).ToLower()));
                     player = Players.FirstOrDefault(p => p.Id == m.GetInt(0));
 
-                    //if (m.Type == MessageType.PlayerJoin)
-                        //await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Welcome!");
-
                     if (player.IsMod)
-                        await Con.SendAsync(MessageType.Chat, $"/giveedit {player.Name}"); // If the world belongs to the owner of the bot, give it a try :)
+                        Say($"/giveedit {player.Name}"); // If the world belongs to the owner of the bot, give it a try :)
 
                     break;
 
@@ -275,7 +280,7 @@ namespace CCBot
                                     case 1:
 
                                         player.Checkpoint = new Coordinate(m.GetInt(2), m.GetInt(3));
-                                        await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} [CC] Checkpoint set!");
+                                        player.Tell("[CC] Checkpoint set!");
                                         await blockBefore.Place(1, m.GetInt(2), m.GetInt(3));
 
                                         break;
@@ -320,7 +325,7 @@ namespace CCBot
                                                 player.Clipboard[1, m.GetInt(2) - tL.X, m.GetInt(3) - tL.Y] = blockBefore;
                                             }
 
-                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} [CC] Content copied to clipboard!");
+                                            player.Tell("[CC] Content copied to clipboard!");
                                         }
 
                                         break;
@@ -343,7 +348,7 @@ namespace CCBot
 
                     if (m.GetString(1).StartsWith("!", StringComparison.Ordinal) || m.GetString(1).StartsWith(".", StringComparison.Ordinal))
                     {
-                        string[] param = m.GetString(1).ToLower().Substring(1).Split(" ");
+                        string[] param = m.GetString(1).ToLower().Substring(1).Split(" ", StringSplitOptions.RemoveEmptyEntries);
                         string cmd = param[0];
                         player = Players.FirstOrDefault(p => p.Id == m.GetInt(0));
 
@@ -352,56 +357,55 @@ namespace CCBot
                             switch (cmd)
                             {
                                 case "help":
-                                    await Task.Run(async () =>
+                                    await Task.Run(() =>
                                     {
                                         if (param.Length > 1)
                                         {
                                             switch (param[1])
                                             {
                                                 case "tools":
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !circle l x y d bid = Creates the border of the specified circular area. (!ci)");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !clear x1 y1 x2 y2 = Clears everything in the specified area. (!cl)");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !clearall = Clears everything.");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !fill l x1 y1 x2 y2 bid = Fills everything in the specified area with a block (!fl)");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !rect l x1 y1 x2 y2 bid = Creates the border of the rect of the specified area (!re)");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !replaceall bid bidNew = Replaces all blocks of id bid to bidNew");
+                                                    player.Tell("!circle l x y d bid = Creates the border of the specified circular area. (!ci)");
+                                                    player.Tell("!clear x1 y1 x2 y2 = Clears everything in the specified area. (!cl)");
+                                                    player.Tell("!clearall = Clears everything.");
+                                                    player.Tell("!fill l x1 y1 x2 y2 bid = Fills everything in the specified area with a block (!fl)");
+                                                    player.Tell("!rect l x1 y1 x2 y2 bid = Creates the border of the rect of the specified area (!re)");
                                                     break;
 
                                                 case "clipboard":
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} To activate the paste-mode, say '!mode paste'");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Copy: Initialize the top left corner with a white basic block, copy a rectangular area with the black basic block (Everything between those two will be copied)");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Paste: Place a grey basic block at the top left of where your paste should be");
+                                                    player.Tell("To activate the paste-mode, say '!mode paste'");
+                                                    player.Tell("Copy: Initialize the top left corner with a white basic block, copy a rectangular area with the black basic block (Everything between those two will be copied)");
+                                                    player.Tell("Paste: Place a grey basic block at the top left of where your paste should be");
                                                     break;
 
                                                 case "modes":
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Use !mode <modification name>");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} rainbow: Try it out.");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} paste: Not working yet.");
+                                                    player.Tell("Use !mode <modification name>");
+                                                    player.Tell("rainbow: Try it out.");
+                                                    player.Tell("paste: Not working yet.");
                                                     break;
 
                                                 case "mirror":
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Use !mirror <type>. Then place a grey basic block to define the mirror centre.");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} h and v are horizontal and vertical mirrors around a line.");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} p is a point mirror around a point.");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} h#, v#, p# equavalently shift the centre by 0.5 blocks.");
+                                                    player.Tell("Use !mirror <type>. Then place a grey basic block to define the mirror centre.");
+                                                    player.Tell("h and v are horizontal and vertical mirrors around a line.");
+                                                    player.Tell("p is a point mirror around a point.");
+                                                    player.Tell("h#, v#, p# equavalently shift the centre by 0.5 blocks.");
                                                     break;
 
                                                 case "storage":
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Storage Modifications");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !getasset <fileName> copies a ready asset to your clipboard.");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !listassets PM's you a list of all assets that exist.");
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} DO NOT USE !saveassets for now!!!");
+                                                    player.Tell("Storage Modifications");
+                                                    player.Tell("!getasset <fileName> copies a ready asset to your clipboard.");
+                                                    player.Tell("!listassets PM's you a list of all assets that exist.");
+                                                    player.Tell("DO NOT USE !saveassets for now!!!");
                                                     break;
 
                                                 case "settings":
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} !brush size d: Sets your brush size");
+                                                    player.Tell("!brush size d: Sets your brush size");
                                                     break;
                                             }
                                         }
                                         else
                                         {
-                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} [Creative Crew Bot] For the block id's, see https://github.com/capasha/EEUProtocol/blob/master/Blocks.md");
-                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} List of commands filtered by usage: !help <tools | clipboard | modes | mirror | settings | storage>");
+                                            player.Tell("[Creative Crew Bot] For the block id's, see https://github.com/capasha/EEUProtocol/blob/master/Blocks.md");
+                                            player.Tell("List of commands filtered by usage: !help <tools | clipboard | modes | mirror | settings | storage>");
                                         }
                                     });
                                     break;
@@ -416,10 +420,10 @@ namespace CCBot
                                     {
                                         try
                                         {
-                                            int x1 = Int32.Parse(param[1]);
-                                            int y1 = Int32.Parse(param[2]);
-                                            int x2 = Int32.Parse(param[3]);
-                                            int y2 = Int32.Parse(param[4]);
+                                            int x1 = int.Parse(param[1]);
+                                            int y1 = int.Parse(param[2]);
+                                            int x2 = int.Parse(param[3]);
+                                            int y2 = int.Parse(param[4]);
 
                                             for (int l = 0; l < 2; l++)
                                                 for (int x = x1; x < x2 + 1; x++)
@@ -428,10 +432,7 @@ namespace CCBot
                                         }
                                         catch
                                         {
-                                            await Task.Run(async () =>
-                                            {
-                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
-                                            });
+                                            player.Tell("error");
                                         }
                                     }
                                     break;
@@ -449,12 +450,12 @@ namespace CCBot
                                     {
                                         try
                                         {
-                                            int l = Int32.Parse(param[1]);
-                                            int x1 = Int32.Parse(param[2]);
-                                            int y1 = Int32.Parse(param[3]);
-                                            int x2 = Int32.Parse(param[4]);
-                                            int y2 = Int32.Parse(param[5]);
-                                            int bid = Int32.Parse(param[6]);
+                                            int l = int.Parse(param[1]);
+                                            int x1 = int.Parse(param[2]);
+                                            int y1 = int.Parse(param[3]);
+                                            int x2 = int.Parse(param[4]);
+                                            int y2 = int.Parse(param[5]);
+                                            int bid = int.Parse(param[6]);
 
                                             for (int x = x1; x < x2 + 1; x++)
                                                 for (int y = y1; y < y2 + 1; y++)
@@ -462,10 +463,7 @@ namespace CCBot
                                         }
                                         catch
                                         {
-                                            await Task.Run(async () =>
-                                            {
-                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
-                                            });
+                                            player.Tell("error");
                                         }
                                     }
                                     break;
@@ -476,12 +474,12 @@ namespace CCBot
                                     {
                                         try
                                         {
-                                            int l = Int32.Parse(param[1]);
-                                            int x1 = Int32.Parse(param[2]);
-                                            int y1 = Int32.Parse(param[3]);
-                                            int x2 = Int32.Parse(param[4]);
-                                            int y2 = Int32.Parse(param[5]);
-                                            int bid = Int32.Parse(param[6]);
+                                            int l = int.Parse(param[1]);
+                                            int x1 = int.Parse(param[2]);
+                                            int y1 = int.Parse(param[3]);
+                                            int x2 = int.Parse(param[4]);
+                                            int y2 = int.Parse(param[5]);
+                                            int bid = int.Parse(param[6]);
 
                                             for (int x = x1; x < x2 + 1; x++)
                                             {
@@ -497,10 +495,7 @@ namespace CCBot
                                         }
                                         catch
                                         {
-                                            await Task.Run(async () =>
-                                            {
-                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
-                                            });
+                                            player.Tell("error");
                                         }
                                     }
                                     break;
@@ -511,11 +506,11 @@ namespace CCBot
                                     {
                                         try
                                         {
-                                            int l = Int32.Parse(param[1]);
-                                            int _x = Int32.Parse(param[2]);
-                                            int _y = Int32.Parse(param[3]);
-                                            int r = Int32.Parse(param[4]);
-                                            int bid = Int32.Parse(param[5]);
+                                            int l = int.Parse(param[1]);
+                                            int _x = int.Parse(param[2]);
+                                            int _y = int.Parse(param[3]);
+                                            int r = int.Parse(param[4]);
+                                            int bid = int.Parse(param[5]);
 
                                             int d = (5 - r * 4) / 4;
                                             int x = 0;
@@ -546,9 +541,9 @@ namespace CCBot
                                         }
                                         catch
                                         {
-                                            await Task.Run(async () =>
+                                            await Task.Run(() =>
                                             {
-                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                player.Tell("error");
                                             });
                                         }
                                     }
@@ -595,7 +590,7 @@ namespace CCBot
                                                 break;
 
                                             default:
-                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                player.Tell("error");
                                                 break;
                                         }
                                     }
@@ -612,7 +607,7 @@ namespace CCBot
 
                                         if (File.Exists($"../../../assets/{buildName}.json"))
                                         {
-                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} The asset '{buildName}' is already existing!");
+                                            player.Tell($"The asset '{buildName}' is already existing!");
                                         }
                                         else
                                         {
@@ -621,7 +616,7 @@ namespace CCBot
                                                 var serializer = JsonConvert.SerializeObject(player.Clipboard, Json_settings);
                                                 file.WriteLine(serializer);
                                             }
-                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Saved!");
+                                            player.Tell("Saved!");
                                         }
                                     }
                                     break;
@@ -640,7 +635,7 @@ namespace CCBot
                                         }
                                         else
                                         {
-                                            await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} The asset '{buildName}' is not existing!");
+                                            player.Tell($"The asset '{buildName}' is not existing!");
                                         }
                                     }
                                     break;
@@ -650,7 +645,7 @@ namespace CCBot
 
                                     foreach (string k in files)
                                     {
-                                        await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} {k}");
+                                        player.Tell(k);
                                     }
 
                                     break;
@@ -705,14 +700,14 @@ namespace CCBot
                                             case "d+":
                                                 player.Mode = 3;
                                                 player.Mirror = 7;
-                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                player.Tell("error");
                                                 break;
 
                                             // Diagonal x = -y Mirror
                                             case "d-":
                                                 player.Mode = 3;
                                                 player.Mirror = 8;
-                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                player.Tell("error");
                                                 break;
 
                                             // No Mirror/ Default
@@ -723,10 +718,94 @@ namespace CCBot
                                                 break;
 
                                             default:
-                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                player.Tell("error");
                                                 break;
                                         }
                                     }
+                                    break;
+                                case "curve":
+                                case "cu":
+                                    if (param.Length % 2 == 0)
+                                    {
+                                        int bid = int.Parse(param[1]);
+                                        bool drawLines = param[3] == "t";
+
+                                        List<Coordinate> pos = new List<Coordinate>();
+                                        for(int i = 4; i < param.Length; i += 2)
+                                            pos.Add(new Coordinate(int.Parse(param[i]), int.Parse(param[i + 1])));
+
+                                        Queue<Coordinate> queue = new Queue<Coordinate>();
+                                        int[] k = Tartaglia((uint)pos.Count);
+                                        int n = pos.Count - 1;
+                                        int samples = int.Parse(param[2]);
+                                        for (int d = 0; d <= samples; d += 1)
+                                        {
+                                            double t = (double)d / samples;
+                                            Coordinate c = new Coordinate();
+                                            for (int i = 0; i <= n; i++)
+                                            {
+                                                c.X += (int)Math.Round(k[i] * pos[i].X * Math.Pow(1 - t, n - i) * Math.Pow(t, i));
+                                                c.Y += (int)Math.Round(k[i] * pos[i].Y * Math.Pow(1 - t, n - i) * Math.Pow(t, i));
+                                            }
+                                            queue.Enqueue(c);
+
+                                            if (drawLines)
+                                            {
+                                                if (queue.Count == 2)
+                                                {
+                                                    Coordinate c1 = queue.Dequeue(), c2 = queue.Peek();
+                                                    int x1 = c1.X, y1 = c1.Y, x2 = c2.X, y2 = c2.Y;
+
+                                                    int xC = x1 - x2;
+                                                    int yC = y1 - y2;
+
+                                                    if (Math.Abs(xC) >= Math.Abs(yC))
+                                                    {
+                                                        float modY = (float)yC / xC;
+
+                                                        if (x1 > x2)
+                                                            for (int x = x2, i = 0; x < x1; x++, i++)
+                                                            {
+                                                                await PlaceBlock(1, x, (int)Math.Round(y2 + modY * i), bid);
+                                                            }
+                                                        else
+                                                            for (int x = x1, i = 0; x < x2; x++, i++)
+                                                            {
+                                                                await PlaceBlock(1, x, (int)Math.Round(y1 + modY * i), bid);
+                                                            }
+                                                    }
+                                                    else
+                                                    {
+                                                        float modX = (float)xC / yC;
+
+                                                        if (y1 > y2)
+                                                        {
+                                                            for (int y = y2, i = 0; y < y1; y++, i++)
+                                                            {
+                                                                await PlaceBlock(1, (int)Math.Round(x2 + modX * i), y, bid);
+                                                            }
+                                                            await PlaceBlock(1, x1, y1, bid);
+                                                        }
+                                                        else
+                                                        {
+                                                            for (int y = y1, i = 0; y < y2; y++, i++)
+                                                            {
+                                                                await PlaceBlock(1, (int)Math.Round(x1 + modX * i), y, bid);
+                                                            }
+                                                            await PlaceBlock(1, x2, y2, bid);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Coordinate cd = queue.Dequeue();
+                                                await PlaceBlock(1, cd.X, cd.Y, bid);
+                                            }
+                                        }
+                                    }
+                                    else
+                                        player.Tell("Invalid number of parameters: must be an odd number (<bid> <sampleNum> <drawLines> <x0> <y0> ...)");
                                     break;
 
                                 /*
@@ -757,7 +836,7 @@ namespace CCBot
                                             // 3 is mirror awaiting
 
                                             default:
-                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                player.Tell("error");
                                                 break;
                                         }
                                     }
@@ -770,21 +849,21 @@ namespace CCBot
                                             case "size":
                                                 try
                                                 {
-                                                    int n = Int32.Parse(param[2]);
+                                                    int n = int.Parse(param[2]);
                                                     player.BrushSize = n;
                                                 }
                                                 catch
                                                 {
-                                                    await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                    player.Tell("error");
                                                 }
                                                 break;
 
                                             case "shape":
-                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} Haha! No...");
+                                                player.Tell("Haha! No...");
                                                 break;
 
                                             default:
-                                                await Con.SendAsync(MessageType.Chat, $"/pm {player.Name} error");
+                                                player.Tell("unknown brush option");
                                                 break;
                                         }
                                     break;
@@ -819,5 +898,65 @@ namespace CCBot
             await con.SendAsync(MessageType.PlaceBlock, 1, x, y, id, morph, _p_id, _t_id, _flip);
             world[1, x, y] = new Portal(id, morph, _p_id, _t_id, _flip);
         }*/
+
+        /// <summary>
+        /// Sends a public message.
+        /// </summary>
+        /// <param name="format"> String with format. </param>
+        /// <param name="args"> Arguments. </param>
+        public static void Say(string format, params object[] args) => Con.Send(MessageType.Chat, string.Format(format, args));
+
+        /// <summary>
+        /// Sends a public message.
+        /// </summary>
+        /// <param name="msg"> Message. </param>
+        public static void Say(string msg) => Con.Send(MessageType.Chat, msg);
+
+        /// <summary>
+        /// Sends a public message.
+        /// </summary>
+        /// <param name="obj"> Object whose ToString method is to be called. </param>
+        public static void Say(object obj) => Con.Send(MessageType.Chat, obj.ToString());
+
+        /// <summary>
+        /// Sends a private message.
+        /// </summary>
+        /// <param name="player"> The receiver. </param>
+        /// <param name="format"> String with format. </param>
+        /// <param name="args"> Arguments. </param>
+        public static void SayPrivate(string player, string format, params object[] args) => Con.Send(MessageType.Chat, "/pm " + player + " " + string.Format(format, args));
+
+        /// <summary>
+        /// Sends a private message.
+        /// </summary>
+        /// <param name="player"> The receiver. </param>
+        /// <param name="msg"> Message. </param>
+        public static void SayPrivate(string player, string msg) => Con.Send(MessageType.Chat, "/pm " + player + " " + msg);
+
+        /// <summary>
+        /// Sends a private message
+        /// </summary>
+        /// <param name="player"> The receiver. </param>
+        /// <param name="obj"> Object whose ToString method is to be called. </param>
+        public static void SayPrivate(string player, object obj) => Con.Send(MessageType.Chat, "/pm " + player + " " + obj.ToString());
+
+        public static int[] Tartaglia(uint num)
+        {
+            int[] res = new int[num];
+            int[] prev = new int[num];
+            res[0] = 1;
+            for (int n = 0; n < num; n++)
+            {
+                for (int i = 0; i <= n; i++)
+                {
+                    if (i == 0 || i == n)
+                        res[i] = 1;         // First and last numbers are always 1.
+                    else
+                        res[i] = prev[i - 1] + prev[i];
+                }
+                res.CopyTo(prev, 0);
+            }
+            return res;
+        }
     }
 }
